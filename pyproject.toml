@@ -10,6 +10,7 @@ packages = [{ include = "book_review" }]
 [tool.poetry.dependencies]
 python = "^3.11"
 pydantic = "^2.7.0"
+aiohttp = {extras = ["speedups"], version = "^3.9.5"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
