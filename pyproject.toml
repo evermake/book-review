@@ -9,12 +9,15 @@ packages = [{ include = "book_review" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-ruff = "^0.3.7"
 pydantic = "^2.7.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.7"
 
 [tool.poetry.scripts]
 serve = "book_review.main:main"
 format = "tools:format"
+check = "tools:check"
 
 [build-system]
 requires = ["poetry-core"]

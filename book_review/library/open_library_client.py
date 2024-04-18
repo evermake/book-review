@@ -4,6 +4,12 @@ from .client import LibraryClient, SearchBooksFilter
 
 
 class OpenLibraryClient(LibraryClient):
+    """
+    Client for the OpenLibrary.
+
+    See: https://openlibrary.org/developers/api
+    """
+
     def __init__(self) -> None:
         super().__init__()
 

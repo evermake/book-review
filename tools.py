@@ -1,5 +1,9 @@
-import subprocess
+from subprocess import run
+
+
+def check():
+    run(["ruff", "check"])
 
 
 def format():
-    subprocess.run(["ruff", "format"])
+    run(["ruff", "format"])

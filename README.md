@@ -28,3 +28,15 @@ of external APIs, BRP offers an immersive experience for bibliophiles.
 poetry install
 poetry run serve
 ```
+
+## Style
+
+This projects uses [ruff] as linter and formatter.
+
+To run it execute the following command:
+
+```bash
+poetry run format
+```
+
+[ruff]: https://docs.astral.sh/ruff/
