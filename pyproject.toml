@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "book-review-platform"
+version = "0.1.0"
+description = "The collaborative hub for literary enthusiasts"
+authors = []
+license = "Unlicense"
+readme = "README.md"
+packages = [{ include = "book_review" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.scripts]
+serve = "book_review.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

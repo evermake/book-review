@@ -21,3 +21,10 @@ of external APIs, BRP offers an immersive experience for bibliophiles.
    dates, genres, and cover images. o The platform suggests personalized book
    recommendations based on users’ reading history, preferences, and trending
    titles.
+
+## Running the project
+
+```bash
+poetry install
+poetry run serve
+```
