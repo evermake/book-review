@@ -1,13 +1,13 @@
 from subprocess import run
 
 
-def typecheck():
+def typecheck() -> None:
     run(["mypy", "."])
 
 
-def lint():
+def lint() -> None:
     run(["ruff", "check"])
 
 
-def format():
+def format() -> None:
     run(["ruff", "format"])

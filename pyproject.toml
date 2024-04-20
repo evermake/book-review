@@ -22,6 +22,9 @@ format = "tools:format"
 lint = "tools:lint"
 typecheck = "tools:typecheck"
 
+[tool.mypy]
+strict = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
