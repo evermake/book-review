@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from datetime import date
 
 
-type BookID = str
-type AuthorID = str
+BookID = str
+AuthorID = str
 
 
 class Author(BaseModel):
