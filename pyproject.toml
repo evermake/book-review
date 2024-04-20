@@ -24,6 +24,7 @@ typecheck = "tools:typecheck"
 
 [tool.mypy]
 strict = true
+plugins = ["pydantic.mypy"]
 
 [build-system]
 requires = ["poetry-core"]
