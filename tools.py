@@ -1,7 +1,11 @@
 from subprocess import run
 
 
-def check():
+def typecheck():
+    run(["mypy", "."])
+
+
+def lint():
     run(["ruff", "check"])
 
 
