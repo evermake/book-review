@@ -36,7 +36,7 @@ This projects uses [ruff] as linter and formatter.
 To run linter execute the following command:
 
 ```bash
-poetry run linter
+poetry run lint
 ```
 
 To apply linter suggestions run
