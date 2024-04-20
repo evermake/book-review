@@ -11,6 +11,7 @@ packages = [{ include = "book_review" }]
 python = "^3.11"
 pydantic = "^2.7.0"
 aiohttp = {extras = ["speedups"], version = "^3.9.5"}
+mypy = "^1.9.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
@@ -18,7 +19,8 @@ ruff = "^0.3.7"
 [tool.poetry.scripts]
 serve = "book_review.main:main"
 format = "tools:format"
-check = "tools:check"
+lint = "tools:lint"
+typecheck = "tools:typecheck"
 
 [build-system]
 requires = ["poetry-core"]

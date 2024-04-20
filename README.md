@@ -33,10 +33,27 @@ poetry run serve
 
 This projects uses [ruff] as linter and formatter.
 
-To run it execute the following command:
+To run linter execute the following command:
+
+```bash
+poetry run linter
+```
+
+To apply linter suggestions run
 
 ```bash
 poetry run format
 ```
 
+## Typechecking
+
+This project uses [mypy]
+
+To run typechecker execute the following command:
+
+```bash
+poetry run typecheck
+```
+
 [ruff]: https://docs.astral.sh/ruff/
+[mypy]: https://mypy-lang.org/
