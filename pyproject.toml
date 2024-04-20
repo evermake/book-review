@@ -11,16 +11,23 @@ packages = [{ include = "book_review" }]
 python = "^3.11"
 pydantic = "^2.7.0"
 aiohttp = {extras = ["speedups"], version = "^3.9.5"}
-mypy = "^1.9.0"
+pypika = "^0.48.9"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
+yoyo-migrations = "^8.2.0"
+mypy = "^1.9.0"
 
 [tool.poetry.scripts]
 serve = "book_review.main:main"
 format = "tools:format"
 lint = "tools:lint"
 typecheck = "tools:typecheck"
+
+migrations-apply = "tools:migrations_apply"
+migrations-rollback = "tools:migrations_rollback"
+migrations-list = "tools:migrations_list"
+migrations-new = "tools:migrations_new"
 
 [tool.mypy]
 strict = true
