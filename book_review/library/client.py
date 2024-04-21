@@ -1,9 +1,9 @@
+from abc import ABC, abstractmethod
 from typing import Optional
+
 from pydantic import BaseModel, PositiveInt
 
-from book_review.models.book import BookPreview, Book, BookID
-
-from abc import ABC, abstractmethod
+from book_review.models.book import Book, BookID, BookPreview
 
 
 class SearchBooksFilter(BaseModel):
