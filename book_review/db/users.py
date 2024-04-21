@@ -1,5 +1,6 @@
 import sqlite3
 from abc import abstractmethod
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -15,7 +16,7 @@ class User(BaseModel):
 
 class Repository(db.Repository):
     @abstractmethod
-    def find_user(self, id: int) -> User:
+    def find_user(self, id: int) -> Optional[User]:
         pass
 
     @abstractmethod
@@ -42,12 +43,15 @@ class SQLiteRepository(Repository):
     def close(self) -> None:
         self.connection.close()
 
-    def find_user(self, id: int) -> User:
+    def find_user(self, id: int) -> Optional[User]:
         cursor = self.connection.execute(
             "SELECT id, login, password_hash, created_at FROM users u WHERE u.id = ?",
             (id,),
         )
         row = cursor.fetchone()
+
+        if row is None:
+            return None
 
         (id, login, password_hash, created_at) = row
 
