@@ -1,10 +1,11 @@
+import sqlite3
+from abc import abstractmethod
+from datetime import datetime
 from typing import Optional
-import book_review.repository.repository as repository
 
 from pydantic import BaseModel
-from datetime import datetime
 
-import sqlite3
+import book_review.db.repository as db
 
 
 class User(BaseModel):
@@ -14,7 +15,17 @@ class User(BaseModel):
     created_at: datetime
 
 
-class Repository(repository.Repository):
+class Repository(db.Repository):
+    @abstractmethod
+    def find_user(self, id: int) -> list[User]:
+        pass
+
+    @abstractmethod
+    def create_user(self, login: str, password_hash: str) -> Optional[int]:
+        pass
+
+
+class SQLiteRepository(Repository):
     connection: sqlite3.Connection
 
     def __init__(self, connection: sqlite3.Connection) -> None:
@@ -23,12 +34,12 @@ class Repository(repository.Repository):
         self.connection = connection
 
     @staticmethod
-    def connect(database: str) -> "Repository":
-        return Repository(sqlite3.connect(database))
+    def connect(database: str) -> "SQLiteRepository":
+        return SQLiteRepository(sqlite3.connect(database))
 
     @staticmethod
-    def in_memory() -> "Repository":
-        return Repository.connect(":memory:")
+    def in_memory() -> "SQLiteRepository":
+        return SQLiteRepository.connect(":memory:")
 
     def close(self) -> None:
         self.connection.close()
@@ -60,6 +71,7 @@ class Repository(repository.Repository):
             "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
             (login, password_hash),
         )
+        self.connection.commit()
 
         row = cursor.fetchone()
 

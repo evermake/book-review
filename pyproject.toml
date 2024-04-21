@@ -23,6 +23,7 @@ serve = "book_review.main:main"
 format = "tools:format"
 lint = "tools:lint"
 typecheck = "tools:typecheck"
+check = "tools:check"
 
 migrations-apply = "tools:migrations_apply"
 migrations-rollback = "tools:migrations_rollback"
@@ -32,6 +33,9 @@ migrations-new = "tools:migrations_new"
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
+
+[tool.ruff.lint]
+extend-select = ["I"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -17,7 +17,7 @@ CREATE TABLE reviews (
     commentary TEXT,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    edited_at TIMESTAMP,
+    updated_at TIMESTAMP,
 
     UNIQUE(user_id, book_id)
 );
