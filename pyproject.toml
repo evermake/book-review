@@ -11,15 +11,16 @@ packages = [{ include = "book_review" }]
 python = "^3.11"
 pydantic = "^2.7.0"
 aiohttp = {extras = ["speedups"], version = "^3.9.5"}
-pypika = "^0.48.9"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
 yoyo-migrations = "^8.2.0"
 mypy = "^1.9.0"
+pytest = "^8.1.1"
 
 [tool.poetry.scripts]
 serve = "book_review.main:main"
+test = "tools:test"
 format = "tools:format"
 lint = "tools:lint"
 typecheck = "tools:typecheck"
@@ -36,6 +37,12 @@ plugins = ["pydantic.mypy"]
 
 [tool.ruff.lint]
 extend-select = ["I"]
+
+[tool.pytest.ini_options]
+testpaths = [
+  "tests",
+  "integration",
+]
 
 [build-system]
 requires = ["poetry-core"]

@@ -8,6 +8,10 @@ def run(command: str, *args: str) -> None:
     _run([command, *args], cwd=CWD)
 
 
+def test() -> None:
+    run("pytest")
+
+
 def typecheck() -> None:
     run("mypy", ".")
 
