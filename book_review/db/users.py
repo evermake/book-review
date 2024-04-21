@@ -1,7 +1,5 @@
 import sqlite3
 from abc import abstractmethod
-from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -12,16 +10,16 @@ class User(BaseModel):
     id: int
     login: str
     password_hash: str
-    created_at: datetime
+    created_at: sqlite3.Timestamp
 
 
 class Repository(db.Repository):
     @abstractmethod
-    def find_user(self, id: int) -> list[User]:
+    def find_user(self, id: int) -> User:
         pass
 
     @abstractmethod
-    def create_user(self, login: str, password_hash: str) -> Optional[int]:
+    def create_user(self, login: str, password_hash: str) -> int:
         pass
 
 
@@ -44,40 +42,29 @@ class SQLiteRepository(Repository):
     def close(self) -> None:
         self.connection.close()
 
-    def find_user(self, id: int) -> list[User]:
-        cursor = self.connection.cursor()
-        cursor.execute(
+    def find_user(self, id: int) -> User:
+        cursor = self.connection.execute(
             "SELECT id, login, password_hash, created_at FROM users u WHERE u.id = ?",
             (id,),
         )
-        rows = cursor.fetchall()
+        row = cursor.fetchone()
 
-        users: list[User] = []
+        (id, login, password_hash, created_at) = row
 
-        for row in rows:
-            (id, login, password_hash, created_at) = row
+        return User(
+            id=id, login=login, password_hash=password_hash, created_at=created_at
+        )
 
-            user = User(
-                id=id, login=login, password_hash=password_hash, created_at=created_at
-            )
-
-            users.append(user)
-
-        return users
-
-    def create_user(self, login: str, password_hash: str) -> Optional[int]:
-        cursor = self.connection.cursor()
-        cursor.execute(
+    def create_user(self, login: str, password_hash: str) -> int:
+        cursor = self.connection.execute(
             "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
             (login, password_hash),
         )
-        self.connection.commit()
 
         row = cursor.fetchone()
 
-        if not row:
-            return None
+        self.connection.commit()
 
-        (id,) = row[0]
+        (id,) = row
 
         return int(id)

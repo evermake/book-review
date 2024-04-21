@@ -73,9 +73,7 @@ class SQLiteRepository(Repository):
 
             query += f" WHERE {' AND '.join(statements)}"
 
-        cursor = self.connection.cursor()
-        cursor.execute(query, params)
-
+        cursor = self.connection.execute(query, params)
         rows = cursor.fetchall()
 
         reviews: list[Review] = []
@@ -122,12 +120,9 @@ class SQLiteRepository(Repository):
         RETURNING id
         """
 
-        cursor = self.connection.cursor()
-        cursor.execute(query, params)
-
-        self.connection.commit()
-
+        cursor = self.connection.execute(query, params)
         row = cursor.fetchone()
+        self.connection.commit()
 
         if row is None:
             return None
