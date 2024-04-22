@@ -11,12 +11,14 @@ packages = [{ include = "book_review" }]
 python = "^3.11"
 pydantic = "^2.7.0"
 aiohttp = {extras = ["speedups"], version = "^3.9.5"}
+setuptools = "^69.5.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
 yoyo-migrations = "^8.2.0"
 mypy = "^1.9.0"
 pytest = "^8.1.1"
+pytest-subtests = "^0.12.1"
 
 [tool.poetry.scripts]
 serve = "book_review.main:main"

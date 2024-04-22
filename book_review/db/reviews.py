@@ -11,7 +11,7 @@ class Review(BaseModel):
     user_id: int
     book_id: str
     rating: int
-    commentary: str
+    commentary: Optional[str]
     created_at: sqlite3.Timestamp
     updated_at: Optional[sqlite3.Timestamp]
 
@@ -20,12 +20,12 @@ class Repository(db.Repository):
     @abstractmethod
     def create_review(
         self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
-    ) -> Optional[int]:
+    ) -> None:
         pass
 
     @abstractmethod
     def find_reviews(
-        self, book_id: Optional[str], user_id: Optional[int]
+        self, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> list[Review]:
         pass
 
@@ -50,9 +50,9 @@ class SQLiteRepository(Repository):
         self.connection.close()
 
     def find_reviews(
-        self, book_id: Optional[str], user_id: Optional[int]
+        self, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> list[Review]:
-        query = "SELECT user_id, book_id, rating, commentary, created_at, updated_at, edited_at FROM reviews"
+        query = "SELECT user_id, book_id, rating, commentary, created_at, updated_at FROM reviews"
 
         params: dict[str, str | int] = dict()
 
@@ -65,10 +65,10 @@ class SQLiteRepository(Repository):
         if params:
             statements = []
 
-            if params["book_id"]:
+            if "book_id" in params:
                 statements.append("book_id = :book_id")
 
-            if params["user_id"]:
+            if "user_id" in params:
                 statements.append("user_id = :user_id")
 
             query += f" WHERE {' AND '.join(statements)}"
@@ -106,27 +106,18 @@ class SQLiteRepository(Repository):
 
     def create_review(
         self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
-    ) -> Optional[int]:
+    ) -> None:
         params = {"user_id": user_id, "book_id": book_id, "rating": rating}
 
         if commentary is not None:
             params["commentary"] = commentary
 
-        columns = map(lambda c: c[0], params)
+        columns = params.keys()
 
         query = f"""
         INSERT INTO reviews ({', '.join(columns)})
         VALUES ({', '.join(map(lambda c: ":" + c, columns))})
-        RETURNING id
         """
 
-        cursor = self.connection.execute(query, params)
-        row = cursor.fetchone()
+        self.connection.execute(query, params)
         self.connection.commit()
-
-        if row is None:
-            return None
-
-        (id,) = row
-
-        return int(id)
