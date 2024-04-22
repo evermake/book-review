@@ -19,5 +19,5 @@ CREATE TABLE reviews (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
 
-    UNIQUE(user_id, book_id)
+    PRIMARY KEY (user_id, book_id)
 );
