@@ -9,7 +9,7 @@ import yoyo
 from pytest_subtests import SubTests
 
 import book_review.db.reviews as db_reviews
-import book_review.db.users as db_users
+import book_review.db.users as db
 
 
 @pytest.fixture
@@ -34,8 +34,8 @@ def connection() -> Generator[sqlite3.Connection, None, None]:
 @pytest.fixture
 def users_repo(
     connection: sqlite3.Connection,
-) -> Generator[db_users.Repository, None, None]:
-    yield db_users.SQLiteRepository(connection)
+) -> Generator[db.Repository, None, None]:
+    yield db.SQLiteRepository(connection)
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def reviews_repo(
     yield db_reviews.SQLiteRepository(connection)
 
 
-def test_users_create_and_find(users_repo: db_users.Repository) -> None:
+def test_users_create_and_find(users_repo: db.Repository, subtests: SubTests) -> None:
     logins = [f"login{i}" for i in range(10)]
 
     ids: dict[int, str] = {}
@@ -54,20 +54,28 @@ def test_users_create_and_find(users_repo: db_users.Repository) -> None:
         ids[id] = login
 
     for id, login in ids.items():
-        user = users_repo.find_user(id)
 
-        assert user is not None
-        assert user.id == id
-        assert user.login == login
+        def check_user(user: Optional[db.User]) -> None:
+            assert user is not None
+            assert user.id == id
+            assert user.login == login
+
+        with subtests.test("find by id", id=id):
+            user = users_repo.find_user_by_id(id)
+            check_user(user)
+
+        with subtests.test("find by login", login=login):
+            user = users_repo.find_user_by_login(login)
+            check_user(user)
 
 
-def test_users_not_found(users_repo: db_users.Repository) -> None:
-    user = users_repo.find_user(42)
+def test_users_not_found(users_repo: db.Repository) -> None:
+    user = users_repo.find_user_by_id(42)
     assert user is None
 
 
 def test_reviews_create_and_find(
-    users_repo: db_users.Repository,
+    users_repo: db.Repository,
     reviews_repo: db_reviews.Repository,
     subtests: SubTests,
 ) -> None:

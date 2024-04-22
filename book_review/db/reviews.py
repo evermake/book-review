@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 import book_review.db.repository as db
+import book_review.models.reviews as models
 
 
 class Review(BaseModel):
@@ -14,6 +15,16 @@ class Review(BaseModel):
     commentary: Optional[str]
     created_at: sqlite3.Timestamp
     updated_at: Optional[sqlite3.Timestamp]
+
+    def map(self) -> models.Review:
+        return models.Review(
+            user_id=self.user_id,
+            book_id=self.book_id,
+            rating=self.rating,
+            commentary=self.commentary,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+        )
 
 
 class Repository(db.Repository):
