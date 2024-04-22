@@ -5,11 +5,18 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 
 def run(command: str, *args: str) -> None:
-    _run([command, *args], cwd=CWD)
+    _args = [command, *args]
+
+    print(f"+ {' '.join(_args)}")
+    _run(_args, cwd=CWD)
 
 
 def test() -> None:
     run("pytest")
+
+
+def security() -> None:
+    run("bandit", "-r", "book_review", "-n", "3", "-lll")
 
 
 def typecheck() -> None:
@@ -21,12 +28,21 @@ def lint() -> None:
 
 
 def check() -> None:
-    print("--- Lint")
+    def header(title: str) -> None:
+        print(f"\x1b[4;1m{title}\x1b[0m")
+        print()
+
+    header("Lint")
     lint()
 
     print()
 
-    print("--- Typecheck")
+    header("Security")
+    security()
+
+    print()
+
+    header("Typecheck")
     typecheck()
 
 

@@ -10,16 +10,17 @@ packages = [{ include = "book_review" }]
 [tool.poetry.dependencies]
 python = "^3.11"
 pydantic = "^2.7.0"
-aiohttp = {extras = ["speedups"], version = "^3.9.5"}
-setuptools = "^69.5.1"
+aiohttp = { extras = ["speedups"], version = "^3.9.5" }
 argon2-cffi = "^23.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
 yoyo-migrations = "^8.2.0"
+setuptools = "^69.5.1"
 mypy = "^1.9.0"
 pytest = "^8.1.1"
 pytest-subtests = "^0.12.1"
+bandit = "^1.7.8"
 
 [tool.poetry.scripts]
 serve = "book_review.main:main"
@@ -28,6 +29,7 @@ format = "tools:format"
 lint = "tools:lint"
 typecheck = "tools:typecheck"
 check = "tools:check"
+security = "tools:security"
 
 migrations-apply = "tools:migrations_apply"
 migrations-rollback = "tools:migrations_rollback"
@@ -43,10 +45,7 @@ ignore_missing_imports = true
 extend-select = ["I"]
 
 [tool.pytest.ini_options]
-testpaths = [
-  "tests",
-  "integration",
-]
+testpaths = ["tests", "integration"]
 filterwarnings = ["ignore::DeprecationWarning:yoyo.*:"]
 
 [build-system]
