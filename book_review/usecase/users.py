@@ -16,8 +16,16 @@ class UseCase:
         self._hasher = PasswordHasher()
         self.repo = repo
 
-    def find_user(self, id: UserID) -> Optional[User]:
+    def find_user_by_id(self, id: UserID) -> Optional[User]:
         user = self.repo.find_user_by_id(id)
+
+        if user is None:
+            return None
+
+        return user.map()
+
+    def find_user_by_login(self, login: str) -> Optional[User]:
+        user = self.repo.find_user_by_login(login)
 
         if user is None:
             return None
