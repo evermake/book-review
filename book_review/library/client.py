@@ -7,11 +7,11 @@ from book_review.models.book import Book, BookID, BookPreview
 
 
 class SearchBooksFilter(BaseModel):
-    query: Optional[str]
-    sort: Optional[str]
-    language: Optional[str]
-    page: Optional[PositiveInt]
-    limit: Optional[PositiveInt]
+    query: Optional[str] = None
+    sort: Optional[str] = None
+    language: Optional[str] = None
+    page: Optional[PositiveInt] = None
+    limit: Optional[PositiveInt] = None
 
 
 class LibraryClient(ABC):

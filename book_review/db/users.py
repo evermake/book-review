@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 import book_review.db.repository as db
+import book_review.models.user as models
 
 
 class User(BaseModel):
@@ -13,10 +14,17 @@ class User(BaseModel):
     password_hash: str
     created_at: sqlite3.Timestamp
 
+    def map(self) -> models.User:
+        return models.User(id=self.id, login=self.login, created_at=self.created_at)
+
 
 class Repository(db.Repository):
     @abstractmethod
-    def find_user(self, id: int) -> Optional[User]:
+    def find_user_by_id(self, id: int) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def find_user_by_login(self, login: str) -> Optional[User]:
         pass
 
     @abstractmethod
@@ -43,11 +51,23 @@ class SQLiteRepository(Repository):
     def close(self) -> None:
         self.connection.close()
 
-    def find_user(self, id: int) -> Optional[User]:
+    def find_user_by_id(self, id: int) -> Optional[User]:
         cursor = self.connection.execute(
-            "SELECT id, login, password_hash, created_at FROM users u WHERE u.id = ?",
+            "SELECT id, login, password_hash, created_at FROM users WHERE id = ?",
             (id,),
         )
+
+        return self._fetch_user(cursor)
+
+    def find_user_by_login(self, login: str) -> Optional[User]:
+        cursor = self.connection.execute(
+            "SELECT id, login, password_hash, created_at FROM users WHERE login = ?",
+            (login,),
+        )
+
+        return self._fetch_user(cursor)
+
+    def _fetch_user(self, cursor: sqlite3.Cursor) -> Optional[User]:
         row = cursor.fetchone()
 
         if row is None:
