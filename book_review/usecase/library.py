@@ -1,7 +1,5 @@
 from book_review.library.client import LibraryClient, SearchBooksFilter
-from book_review.models.book import Book, BookPreview
-
-from .book import BookID
+from book_review.models.book import Book, BookID, BookPreview
 
 
 class UseCase:
