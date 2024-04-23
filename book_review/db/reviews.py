@@ -12,9 +12,9 @@ class Review(BaseModel):
     user_id: int
     book_id: str
     rating: int
-    commentary: Optional[str]
+    commentary: Optional[str] = None
     created_at: sqlite3.Timestamp
-    updated_at: Optional[sqlite3.Timestamp]
+    updated_at: Optional[sqlite3.Timestamp] = None
 
     def map(self) -> models.Review:
         return models.Review(
