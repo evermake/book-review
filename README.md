@@ -57,3 +57,8 @@ poetry run typecheck
 
 [ruff]: https://docs.astral.sh/ruff/
 [mypy]: https://mypy-lang.org/
+
+## Configuration
+
+Configuration is stored in `settings.toml` and `.secrets.toml` files. Each field
+can be overriden by the environment variables with the `BOOK_REVIEW` prefix.
