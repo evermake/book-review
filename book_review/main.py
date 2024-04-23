@@ -1,6 +1,7 @@
 import asyncio
 import sys
 
+import rich.traceback
 import uvicorn
 import uvloop
 
@@ -16,6 +17,8 @@ async def run() -> None:
 
 
 def main() -> None:
+    rich.traceback.install()
+
     if sys.version_info >= (3, 11):
         with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
             runner.run(run())
