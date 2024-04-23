@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Optional, Sequence
 
 import aiohttp
@@ -12,9 +13,29 @@ BASE_URL = URL("https://openlibrary.org/")
 QueryParams = list[tuple[str, str]]
 
 
+class Sort(str, Enum):
+    EditionsCountDesc = "editions"
+
+    Old = "old"
+    New = "new"
+
+    RatingAsc = "rating asc"
+    RatingDesc = "rating desc"
+
+    TitleAsc = "title"
+
+    RandomAsc = "random asc"
+    RandomDesc = "random desc"
+    RandomHourly = "random.hourly"
+    RandomDaily = "random.daily"
+
+    KeyAsc = "key asc"
+    KeyDesc = "key desc"
+
+
 class SearchBooksFilter(BaseModel):
     query: Optional[str] = None
-    sort: Optional[str] = None
+    sort: Optional[Sort] = None
     language: Optional[str] = None
     page: Optional[PositiveInt] = None
     limit: Optional[PositiveInt] = None
@@ -22,12 +43,12 @@ class SearchBooksFilter(BaseModel):
 
 class Book(BaseModel):
     key: str
-    author_key: Sequence[str]
-    author_name: Sequence[str]
     title: str
-    language: Sequence[str]
-    publish_year: Sequence[int]
-    subject: Sequence[str]
+    author_key: Sequence[str] = []
+    author_name: Sequence[str] = []
+    language: Sequence[str] = []
+    publish_year: Sequence[int] = []
+    subject: Sequence[str] = []
 
     def map(self) -> models.Book:
         raise NotImplementedError()
@@ -45,7 +66,7 @@ class Client(ABC):
         pass
 
 
-class HTTPAPIClient:
+class HTTPAPIClient(Client):
     _http_client: aiohttp.ClientSession
 
     def __init__(self) -> None:
@@ -72,6 +93,9 @@ class HTTPAPIClient:
         if filter.limit is not None:
             params.append(("limit", str(filter.limit)))
 
+        # add only required fields so that response is smaller and faster
+        params.append(("fields", ",".join(Book.model_fields.keys())))
+
         return params
 
     async def search_books(self, filter: SearchBooksFilter) -> Sequence[Book]:
@@ -81,24 +105,7 @@ class HTTPAPIClient:
             if resp.status != 200:
                 raise Exception(f"unexpected status {resp.status}")
 
-            class Response:
+            class Response(BaseModel):
                 docs: Sequence[Book]
 
-            json: Response = await resp.json()
-
-            books: list[Book] = []
-
-            for doc in json.docs:
-                book = Book(
-                    key=doc.key,
-                    author_key=doc.author_key,
-                    author_name=doc.author_name,
-                    title=doc.title,
-                    language=doc.language,
-                    publish_year=doc.publish_year,
-                    subject=doc.subject,
-                )
-
-                books.append(book)
-
-            return books
+            return Response(**await resp.json()).docs
