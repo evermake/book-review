@@ -15,6 +15,8 @@ class OpenLibraryClient(LibraryClient):
 
     async def search_books_previews(
         self, filter: SearchBooksFilter
-    ) -> list[BookPreview]: ...
+    ) -> list[BookPreview]:
+        raise NotImplementedError()
 
-    async def get_book(self, id: BookID) -> Book: ...
+    async def get_book(self, id: BookID) -> Book:
+        raise NotImplementedError()

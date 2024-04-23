@@ -16,7 +16,7 @@ def test() -> None:
 
 
 def security() -> None:
-    run("bandit", "-r", "book_review", "-n", "3", "-lll")
+    run("bandit", "-r", "book_review", "-n", "3", "-lll", "-c", "pyproject.toml")
 
 
 def typecheck() -> None:
