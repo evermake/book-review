@@ -1,6 +1,6 @@
 import sqlite3
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -37,7 +37,7 @@ class Repository(db.Repository):
     @abstractmethod
     def find_reviews(
         self, book_id: Optional[str] = None, user_id: Optional[int] = None
-    ) -> list[Review]:
+    ) -> Sequence[Review]:
         pass
 
 
@@ -62,7 +62,7 @@ class SQLiteRepository(Repository):
 
     def find_reviews(
         self, book_id: Optional[str] = None, user_id: Optional[int] = None
-    ) -> list[Review]:
+    ) -> Sequence[Review]:
         query = "SELECT user_id, book_id, rating, commentary, created_at, updated_at FROM reviews"
 
         params: dict[str, str | int] = dict()
