@@ -69,10 +69,10 @@ class Client(ABC):
 class HTTPAPIClient(Client):
     _http_client: aiohttp.ClientSession
 
-    def __init__(self) -> None:
+    def __init__(self, base_url: URL = BASE_URL) -> None:
         super().__init__()
 
-        self._http_client = aiohttp.ClientSession(BASE_URL)
+        self._http_client = aiohttp.ClientSession(base_url)
 
     @staticmethod
     def _build_search_books_filters_params(filter: SearchBooksFilter) -> QueryParams:
