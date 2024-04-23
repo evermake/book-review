@@ -44,6 +44,10 @@ ignore_missing_imports = true
 [tool.ruff.lint]
 extend-select = ["I"]
 
+[tool.bandit]
+targets = ["book_review"]
+skips = ["B101"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration"]
 filterwarnings = ["ignore::DeprecationWarning:yoyo.*:"]
