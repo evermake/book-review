@@ -194,3 +194,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Ignore dynaconf secret files
+.secrets.*
