@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from book_review.db.reviews import Repository
 from book_review.models.book import BookID
@@ -23,7 +23,7 @@ class UseCase:
 
     def find_reviews(
         self, book_id: Optional[BookID] = None, user_id: Optional[UserID] = None
-    ) -> list[Review]:
+    ) -> Sequence[Review]:
         reviews = self.repo.find_reviews(book_id, user_id)
 
         return list(map(lambda r: r.map(), reviews))

@@ -1,6 +1,6 @@
 import random
 import sqlite3
-from typing import Optional
+from typing import Optional, Sequence
 
 import book_review.db.reviews as db
 import book_review.usecase.reviews as usecase
@@ -27,7 +27,7 @@ def test_create_review() -> None:
 
         def find_reviews(
             self, book_id: Optional[str] = None, user_id: Optional[int] = None
-        ) -> list[db.Review]:
+        ) -> Sequence[db.Review]:
             raise Exception()
 
         def close(self) -> None:
@@ -68,7 +68,7 @@ def test_find_reviews() -> None:
 
         def find_reviews(
             self, book_id: Optional[str] = None, user_id: Optional[int] = None
-        ) -> list[db.Review]:
+        ) -> Sequence[db.Review]:
             assert book_id == expected_book_id
             assert user_id == expected_user_id
 
