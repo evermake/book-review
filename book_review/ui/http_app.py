@@ -82,6 +82,17 @@ class App:
 
             return Token(access_token=access_token, token_type="bearer")
 
+        @app.post("/users")
+        async def create_user(login: str, password: str) -> User:
+            id = self._users.create_user(login, password)
+
+            user = self._users.find_user_by_id(id)
+
+            if user is None:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return user
+
         @app.get("/users/me/", response_model=User)
         async def users_me(
             user: Annotated[User, Depends(self._get_user)],

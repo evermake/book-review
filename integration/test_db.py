@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from typing import Generator, Optional
 
 import pytest
-import yoyo
 from pytest_subtests import SubTests
 
 import book_review.db.reviews as db_reviews
 import book_review.db.users as db
+from book_review.db.repository import apply_migrations
 
 
 @pytest.fixture
@@ -17,11 +17,7 @@ def connection() -> Generator[sqlite3.Connection, None, None]:
     # can't use :memory: due to yoyo not supporting it
     DB = f"db.test.{uuid.uuid4()}.sqlite3"
 
-    backend = yoyo.get_backend(f"sqlite:///{DB}")
-    migrations = yoyo.read_migrations("book_review/migrations/")
-
-    with backend.lock():
-        backend.apply_migrations(backend.to_apply(migrations))
+    apply_migrations(f"sqlite:///{DB}")
 
     conn = sqlite3.connect(DB)
 

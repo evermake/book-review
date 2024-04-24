@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 class Schema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    DB: str = "db.sqlite3"
     PORT: int = 5000
     DEBUG: bool = False
     SECRET_KEY: str

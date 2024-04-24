@@ -5,6 +5,8 @@ import sys
 import rich.traceback
 import uvloop
 
+import book_review.db.repository as db
+from book_review.config import settings
 from book_review.db.reviews import SQLiteRepository as ReviewsRepository
 from book_review.db.users import SQLiteRepository as UsersRepository
 from book_review.openlibrary.client import HTTPAPIClient as OpenlibraryClient
@@ -14,16 +16,18 @@ from book_review.usecase.reviews import UseCase as ReviewsUseCase
 from book_review.usecase.users import UseCase as UsersUseCase
 
 
-def get_db_connection() -> sqlite3.Connection:
-    return sqlite3.connect("db.sqlite3")
+def get_database_connection_supplier() -> db.ConnectionSupplier:
+    db.apply_migrations(f"sqlite:///{settings.DB}")
+
+    return lambda: sqlite3.connect(settings.DB)
 
 
 async def run() -> None:
-    connection = get_db_connection()
+    connection_supplier = get_database_connection_supplier()
 
     app = App(
-        users=UsersUseCase(UsersRepository(connection)),
-        reviews=ReviewsUseCase(ReviewsRepository(connection)),
+        users=UsersUseCase(UsersRepository(connection_supplier)),
+        reviews=ReviewsUseCase(ReviewsRepository(connection_supplier)),
         openlibrary=OpenlibraryUseCase(OpenlibraryClient()),
     )
 
