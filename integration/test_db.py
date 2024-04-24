@@ -9,36 +9,33 @@ from pytest_subtests import SubTests
 
 import book_review.db.reviews as db_reviews
 import book_review.db.users as db
-from book_review.db.repository import apply_migrations
+from book_review.db.repository import ConnectionSupplier, apply_migrations
 
 
 @pytest.fixture
-def connection() -> Generator[sqlite3.Connection, None, None]:
+def connection_supplier() -> Generator[ConnectionSupplier, None, None]:
     # can't use :memory: due to yoyo not supporting it
     DB = f"db.test.{uuid.uuid4()}.sqlite3"
 
     apply_migrations(f"sqlite:///{DB}")
 
-    conn = sqlite3.connect(DB)
+    yield lambda: sqlite3.connect(DB)
 
-    yield conn
-
-    conn.close()
     os.remove(DB)
 
 
 @pytest.fixture
 def users_repo(
-    connection: sqlite3.Connection,
+    connection_supplier: ConnectionSupplier,
 ) -> Generator[db.Repository, None, None]:
-    yield db.SQLiteRepository(connection)
+    yield db.SQLiteRepository(connection_supplier)
 
 
 @pytest.fixture
 def reviews_repo(
-    connection: sqlite3.Connection,
+    connection_supplier: ConnectionSupplier,
 ) -> Generator[db_reviews.Repository, None, None]:
-    yield db_reviews.SQLiteRepository(connection)
+    yield db_reviews.SQLiteRepository(connection_supplier)
 
 
 def test_users_create_and_find(users_repo: db.Repository, subtests: SubTests) -> None:

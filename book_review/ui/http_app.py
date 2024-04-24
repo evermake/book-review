@@ -96,7 +96,7 @@ class App:
         @app.get("/users/me/", response_model=User)
         async def users_me(
             user: Annotated[User, Depends(self._get_user)],
-        ):
+        ) -> User:
             return user
 
     def _get_user(self, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
