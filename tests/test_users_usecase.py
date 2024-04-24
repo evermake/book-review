@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Optional
+from typing import Optional, Sequence
 
 import book_review.db.users as db
 import book_review.usecase.users as usecase
@@ -7,7 +7,10 @@ import book_review.usecase.users as usecase
 
 def test_verify_password() -> None:
     class MockRepo(db.Repository):
-        def find_user_by_id(self, id: int) -> Optional[db.User]:
+        def find_users(self, *, login_like: Optional[str] = None) -> Sequence[db.User]:
+            raise Exception()
+
+        def find_user_by_id(self, id: db.UserID) -> Optional[db.User]:
             raise Exception()
 
         def find_user_by_login(self, login: str) -> Optional[db.User]:
@@ -38,6 +41,9 @@ def test_create_user() -> None:
     expected_id = 42
 
     class MockRepo(db.Repository):
+        def find_users(self, *, login_like: Optional[str] = None) -> Sequence[db.User]:
+            raise Exception()
+
         def find_user_by_id(self, id: int) -> Optional[db.User]:
             raise Exception()
 
@@ -69,6 +75,9 @@ def test_find_user_by_id() -> None:
     )
 
     class MockRepo(db.Repository):
+        def find_users(self, *, login_like: Optional[str] = None) -> Sequence[db.User]:
+            raise Exception()
+
         def find_user_by_id(self, id: int) -> Optional[db.User]:
             assert id == expected_id
 
@@ -101,6 +110,9 @@ def test_find_user_by_login() -> None:
     )
 
     class MockRepo(db.Repository):
+        def find_users(self, *, login_like: Optional[str] = None) -> Sequence[db.User]:
+            raise Exception()
+
         def find_user_by_id(self, id: int) -> Optional[db.User]:
             raise Exception()
 

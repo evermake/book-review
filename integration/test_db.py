@@ -104,7 +104,9 @@ def test_reviews_create_and_find(
     ]
 
     for p in mock_reviews:
-        reviews_repo.create_review(p.user_id, p.book_id, p.rating, p.commentary)
+        reviews_repo.create_or_update_review(
+            p.user_id, p.book_id, p.rating, p.commentary
+        )
 
     with subtests.test("find all reviews"):
         reviews = reviews_repo.find_reviews()
