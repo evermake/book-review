@@ -3,6 +3,8 @@ from typing import Optional, Sequence
 import book_review.models.book as models
 import book_review.openlibrary.client as openlibrary
 
+CoverSize = openlibrary.CoverSize
+
 
 class UseCase:
     _client: openlibrary.Client
@@ -10,7 +12,7 @@ class UseCase:
     def __init__(self, client: openlibrary.Client) -> None:
         self._client = client
 
-    async def search_books_previews(self, query: str) -> Sequence[models.Book]:
+    async def search_books_previews(self, query: str) -> Sequence[models.BookPreview]:
         books = await self._client.search_books(
             openlibrary.SearchBooksFilter(query=query)
         )
@@ -24,3 +26,8 @@ class UseCase:
             return None
 
         return book.map()
+
+    async def get_cover(
+        self, id: int, size: CoverSize = CoverSize.Small
+    ) -> Optional[bytes]:
+        return await self._client.get_cover(id, size)

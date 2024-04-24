@@ -10,9 +10,10 @@ from book_review.openlibrary.client import Client, HTTPAPIClient, SearchBooksFil
 
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[Client, None]:
-    session = ClientSession(settings.OPENLIBRARY_BASE_URL)
-
-    yield HTTPAPIClient(session)
+    yield HTTPAPIClient(
+        api_session=ClientSession(settings.OPENLIBRARY_BASE_URL),
+        covers_session=ClientSession(settings.OPENLIBRARY_COVERS_BASE_URL),
+    )
 
 
 @pytest.mark.asyncio

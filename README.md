@@ -1,5 +1,16 @@
 # The Book Review Platform
 
+<!--toc:start-->
+
+- [The Book Review Platform](#the-book-review-platform)
+  - [Project Description:](#project-description)
+  - [Key Features](#key-features)
+  - [Running the project](#running-the-project)
+  - [Style](#style)
+  - [Typechecking](#typechecking)
+  - [Configuration](#configuration)
+  <!--toc:end-->
+
 The Book Review Platform (BRP) is a collaborative hub for literary enthusiasts.
 
 ## Project Description:
@@ -28,6 +39,8 @@ of external APIs, BRP offers an immersive experience for bibliophiles.
 poetry install
 poetry run serve
 ```
+
+Docs will be available at `http://http://127.0.0.1:$PORT/docs`
 
 ## Style
 
@@ -62,3 +75,6 @@ poetry run typecheck
 
 Configuration is stored in `settings.toml` and `.secrets.toml` files. Each field
 can be overriden by the environment variables with the `BOOK_REVIEW` prefix.
+
+You can see the default values and their description
+[here](./book_review/config.py)

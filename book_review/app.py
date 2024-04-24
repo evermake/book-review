@@ -34,10 +34,14 @@ def _get_cache_backend() -> CacheBackend:
     return SQLiteBackend(expire_after=settings.CACHE_EXPIRE_MINUTES)
 
 
-def _get_aiohttp_client_session(base_url: yarl.URL) -> ClientSession:
-    session: ClientSession = CachedSession(base_url, cache=_get_cache_backend())
+def _get_aiohttp_client_session(
+    base_url: yarl.URL, *, cache: bool = False
+) -> ClientSession:
+    if cache:
+        session: ClientSession = CachedSession(base_url, cache=_get_cache_backend())
+        return session
 
-    return session
+    return ClientSession(base_url)
 
 
 async def _serve_http_app() -> None:
@@ -48,7 +52,12 @@ async def _serve_http_app() -> None:
         reviews=ReviewsUseCase(ReviewsRepository(connection_supplier)),
         openlibrary=OpenlibraryUseCase(
             OpenlibraryClient(
-                _get_aiohttp_client_session(yarl.URL(settings.OPENLIBRARY_BASE_URL))
+                api_session=_get_aiohttp_client_session(
+                    yarl.URL(settings.OPENLIBRARY_BASE_URL), cache=True
+                ),
+                covers_session=_get_aiohttp_client_session(
+                    yarl.URL(settings.OPENLIBRARY_COVERS_BASE_URL)
+                ),
             )
         ),
     )

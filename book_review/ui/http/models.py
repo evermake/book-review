@@ -6,10 +6,14 @@ from pydantic import BaseModel
 import book_review.models.book as book_models
 import book_review.models.reviews as reviews_models
 import book_review.models.user as user_models
+import book_review.usecase.openlibrary as openlibrary_usecase
 
 UserID = user_models.UserID
 BookID = book_models.BookID
 AuthorID = book_models.AuthorID
+CoverID = book_models.CoverID
+
+CoverSize = openlibrary_usecase.CoverSize
 
 
 class User(BaseModel):
@@ -57,23 +61,41 @@ class Author(BaseModel):
         return Author(id=author.id, name=author.name)
 
 
-class Book(BaseModel):
+class BookPreview(BaseModel):
     id: BookID
     title: str
     authors: Sequence[Author] = []
     first_publishment_date: Optional[date] = None
-    subjects: list[str] = []
-    languages: list[str] = []
+    subjects: Sequence[str] = []
+    languages: Sequence[str] = []
 
     @staticmethod
-    def parse(book: book_models.Book) -> "Book":
+    def parse(book: book_models.BookPreview) -> "BookPreview":
         authors = list(map(lambda a: Author.parse(a), book.authors))
 
-        return Book(
+        return BookPreview(
             id=book.id,
             title=book.title,
             authors=authors,
             first_publishment_date=book.first_publishment_date,
             subjects=book.subjects,
             languages=book.languages,
+        )
+
+
+class Book(BaseModel):
+    id: BookID
+    title: str
+    description: str
+    covers: Sequence[int] = []
+    subjects: Sequence[str] = []
+
+    @staticmethod
+    def parse(book: book_models.Book) -> "Book":
+        return Book(
+            id=book.id,
+            title=book.title,
+            description=book.description,
+            covers=book.covers,
+            subjects=book.subjects,
         )
