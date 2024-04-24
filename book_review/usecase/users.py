@@ -35,7 +35,18 @@ class UseCase:
     def create_user(self, login: str, password: str) -> UserID:
         return self.repo.create_user(login, self._hash_password(password))
 
-    def verify_password(self, hash: str, password: str) -> bool:
+    def authenticate_user(self, login: str, password: str) -> Optional[User]:
+        user = self.repo.find_user_by_login(login)
+
+        if user is None:
+            return None
+
+        if not self._verify_password(user.password_hash, password):
+            return None
+
+        return user.map()
+
+    def _verify_password(self, hash: str, password: str) -> bool:
         try:
             return self._hasher.verify(hash, password)
         except VerifyMismatchError:

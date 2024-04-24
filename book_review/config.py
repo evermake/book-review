@@ -5,8 +5,12 @@ from pydantic import BaseModel, ConfigDict
 class Schema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    DB: str = "db.sqlite3"
     PORT: int = 5000
     DEBUG: bool = False
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
 
 settings = Schema(

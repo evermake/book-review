@@ -18,7 +18,7 @@ class User(BaseModel):
         return models.User(id=self.id, login=self.login, created_at=self.created_at)
 
 
-class Repository(db.Repository):
+class Repository:
     @abstractmethod
     def find_user_by_id(self, id: int) -> Optional[User]:
         pass
@@ -33,39 +33,34 @@ class Repository(db.Repository):
 
 
 class SQLiteRepository(Repository):
-    connection: sqlite3.Connection
+    _connection_supplier: db.ConnectionSupplier
 
-    def __init__(self, connection: sqlite3.Connection) -> None:
+    def __init__(self, connection_supplier: db.ConnectionSupplier) -> None:
         super().__init__()
 
-        self.connection = connection
-
-    @staticmethod
-    def connect(database: str) -> "SQLiteRepository":
-        return SQLiteRepository(sqlite3.connect(database))
+        self._connection_supplier = connection_supplier
 
     @staticmethod
     def in_memory() -> "SQLiteRepository":
-        return SQLiteRepository.connect(":memory:")
-
-    def close(self) -> None:
-        self.connection.close()
+        return SQLiteRepository(db.in_memory_connection_supplier)
 
     def find_user_by_id(self, id: int) -> Optional[User]:
-        cursor = self.connection.execute(
-            "SELECT id, login, password_hash, created_at FROM users WHERE id = ?",
-            (id,),
-        )
+        with self._connection_supplier() as connection:
+            cursor = connection.execute(
+                "SELECT id, login, password_hash, created_at FROM users WHERE id = ?",
+                (id,),
+            )
 
-        return self._fetch_user(cursor)
+            return self._fetch_user(cursor)
 
     def find_user_by_login(self, login: str) -> Optional[User]:
-        cursor = self.connection.execute(
-            "SELECT id, login, password_hash, created_at FROM users WHERE login = ?",
-            (login,),
-        )
+        with self._connection_supplier() as connection:
+            cursor = connection.execute(
+                "SELECT id, login, password_hash, created_at FROM users WHERE login = ?",
+                (login,),
+            )
 
-        return self._fetch_user(cursor)
+            return self._fetch_user(cursor)
 
     def _fetch_user(self, cursor: sqlite3.Cursor) -> Optional[User]:
         row = cursor.fetchone()
@@ -80,15 +75,16 @@ class SQLiteRepository(Repository):
         )
 
     def create_user(self, login: str, password_hash: str) -> int:
-        cursor = self.connection.execute(
-            "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
-            (login, password_hash),
-        )
+        with self._connection_supplier() as connection:
+            cursor = connection.execute(
+                "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
+                (login, password_hash),
+            )
 
-        row = cursor.fetchone()
+            row = cursor.fetchone()
 
-        self.connection.commit()
+            connection.commit()
 
-        (id,) = row
+            (id,) = row
 
-        return int(id)
+            return int(id)
