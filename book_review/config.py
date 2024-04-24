@@ -6,6 +6,7 @@ class Schema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     PORT: int = 5000
+    DEBUG: bool = False
 
 
 settings = Schema(

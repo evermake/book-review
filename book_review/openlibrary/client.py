@@ -50,7 +50,7 @@ class Book(BaseModel):
     publish_year: Sequence[int] = []
     subject: Sequence[str] = []
 
-    def map(self) -> models.Book:
+    def map(self) -> models.BookPreview:
         raise NotImplementedError()
 
 
