@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -14,11 +15,10 @@ class Author(BaseModel):
 class BookPreview(BaseModel):
     id: BookID
     title: str
-    cover_key: str
-    author: Author
-    first_publishment_date: date
-    subjects: list[str]
-    languages: list[str]
+    authors: Sequence[Author] = []
+    first_publishment_date: Optional[date] = None
+    subjects: list[str] = []
+    languages: list[str] = []
 
 
 class Book(BookPreview):

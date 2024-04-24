@@ -1,19 +1,33 @@
 import asyncio
+import sqlite3
 import sys
 
 import rich.traceback
-import uvicorn
 import uvloop
 
-from book_review.config import settings
-from book_review.ui.http_app import app
+from book_review.db.reviews import SQLiteRepository as ReviewsRepository
+from book_review.db.users import SQLiteRepository as UsersRepository
+from book_review.openlibrary.client import HTTPAPIClient as OpenlibraryClient
+from book_review.ui.http_app import App
+from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
+from book_review.usecase.reviews import UseCase as ReviewsUseCase
+from book_review.usecase.users import UseCase as UsersUseCase
+
+
+def get_db_connection() -> sqlite3.Connection:
+    return sqlite3.connect("db.sqlite3")
 
 
 async def run() -> None:
-    config = uvicorn.Config(app, port=settings.PORT, log_level="info")
-    server = uvicorn.Server(config)
+    connection = get_db_connection()
 
-    await server.serve()
+    app = App(
+        users=UsersUseCase(UsersRepository(connection)),
+        reviews=ReviewsUseCase(ReviewsRepository(connection)),
+        openlibrary=OpenlibraryUseCase(OpenlibraryClient()),
+    )
+
+    await app.serve()
 
 
 def main() -> None:
