@@ -24,10 +24,10 @@ def test_verify_password() -> None:
     password = "nisi-illo-asperiores"
     hash = uc._hash_password(password)
 
-    assert uc.verify_password(hash, password)
-    assert not uc.verify_password(hash, hash)
-    assert not uc.verify_password(hash, "delectus-architecto-minima")
-    assert not uc.verify_password(
+    assert uc._verify_password(hash, password)
+    assert not uc._verify_password(hash, hash)
+    assert not uc._verify_password(hash, "delectus-architecto-minima")
+    assert not uc._verify_password(
         "$argon2id$v=19$m=65536,t=3,p=4$MIIRqgvgQbgj220jfp0MPA$YfwJSVjtjSU0zzV/P3S9nnQ/USre2wvJMjfCIjrTQbg",
         password,
     )

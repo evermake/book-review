@@ -16,6 +16,8 @@ fastapi = "^0.110.2"
 uvicorn = {extras = ["standard"], version = "^0.29.0"}
 dynaconf = "^3.2.5"
 rich = "^13.7.1"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.9"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
