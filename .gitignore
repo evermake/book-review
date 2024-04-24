@@ -1,3 +1,5 @@
+*.sqlite
+*.sqlite3
 
 ##########
 # Python #

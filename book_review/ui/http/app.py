@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, Sequence
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -8,10 +8,11 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 
 from book_review.config import settings
-from book_review.models.user import User
 from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
 from book_review.usecase.users import UseCase as UsersUseCase
+
+from .models import Book, BookID, Review, ReviewRequest, User, UserID
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -56,7 +57,7 @@ class App:
     def _register_routes(self) -> None:
         app = self._app
 
-        @app.get("/ping", response_model=str)
+        @app.get("/ping")
         async def ping() -> str:
             return "pong"
 
@@ -82,6 +83,44 @@ class App:
 
             return Token(access_token=access_token, token_type="bearer")
 
+        @app.get("/books")
+        async def search_books(query: str) -> Sequence[Book]:
+            books = await self._openlibrary.search_books_previews(query)
+
+            return list(map(lambda b: Book.parse(b), books))
+
+        @app.get("/books/{id}")
+        async def get_book(id: BookID) -> Book:
+            book = await self._openlibrary.get_book(id)
+
+            if book is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"book with id {id:r} not found",
+                )
+
+            return Book.parse(book)
+
+        @app.post("/reviews")
+        async def create_or_update_review(
+            user: Annotated[User, Depends(self._get_user)], review: ReviewRequest
+        ) -> None:
+            self._reviews.create_or_update_review(
+                user_id=user.id,
+                book_id=review.book_id,
+                rating=review.rating,
+                commentary=review.commentary,
+            )
+
+        @app.get("/reviews")
+        async def find_reviews(
+            book_id: Optional[BookID] = None,
+            user_id: Optional[UserID] = None,
+        ) -> Sequence[Review]:
+            reviews = self._reviews.find_reviews(book_id, user_id)
+
+            return list(map(lambda r: Review.parse(r), reviews))
+
         @app.post("/users")
         async def create_user(login: str, password: str) -> User:
             id = self._users.create_user(login, password)
@@ -91,13 +130,58 @@ class App:
             if user is None:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            return user
+            return User(id=user.id, login=user.login, created_at=user.created_at)
 
-        @app.get("/users/me/", response_model=User)
-        async def users_me(
+        @app.get("/users")
+        async def get_users(login: Optional[str] = None) -> Sequence[User]:
+            users = self._users.find_users(login=login)
+
+            return list(map(lambda u: User.parse(u), users))
+
+        @app.get("/users/single")
+        async def get_single_user(
+            id: Optional[UserID] = None, login: Optional[str] = None
+        ) -> User:
+            if id is not None:
+                user = self._users.find_user_by_id(id)
+
+                if user is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"user with id {id:r} not found",
+                    )
+
+                return User.parse(user)
+
+            if login is not None:
+                user = self._users.find_user_by_login(login)
+
+                if user is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"user with login {login:r} not found",
+                    )
+
+                return User.parse(user)
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="either id or login is required",
+            )
+
+        @app.get("/users/me")
+        async def get_current_user(
             user: Annotated[User, Depends(self._get_user)],
         ) -> User:
             return user
+
+        @app.get("/users/me/reviews")
+        async def get_current_user_reviews(
+            user: Annotated[User, Depends(self._get_user)],
+        ) -> Sequence[Review]:
+            reviews = self._reviews.find_reviews(user_id=user.id)
+
+            return list(map(lambda r: Review.parse(r), reviews))
 
     def _get_user(self, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
         credentials_exception = HTTPException(
@@ -125,7 +209,7 @@ class App:
         if user is None:
             raise credentials_exception
 
-        return user
+        return User.parse(user)
 
     def _create_access_token(
         self, data: dict[str, Any], expires_delta: Optional[timedelta] = None

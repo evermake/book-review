@@ -11,6 +11,8 @@ class Schema(BaseModel):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    CACHE_EXPIRE_MINUTES: int = 60 * 24
+    OPENLIBRARY_BASE_URL: str = "https://openlibrary.org/"
 
 
 settings = Schema(

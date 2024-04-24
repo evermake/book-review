@@ -13,7 +13,7 @@ def test_create_review() -> None:
     expected_commentary = "Laboriosam reprehenderit dolores porro vitae."
 
     class MockRepo(db.Repository):
-        def create_review(
+        def create_or_update_review(
             self,
             user_id: int,
             book_id: str,
@@ -35,7 +35,7 @@ def test_create_review() -> None:
 
     uc = usecase.UseCase(MockRepo())
 
-    uc.create_review(
+    uc.create_or_update_review(
         expected_user_id, expected_book_id, expected_rating, expected_commentary
     )
 
@@ -57,7 +57,7 @@ def test_find_reviews() -> None:
         expected_reviews.append(review)
 
     class MockRepo(db.Repository):
-        def create_review(
+        def create_or_update_review(
             self,
             user_id: int,
             book_id: str,

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -9,15 +9,19 @@ from book_review.models.user import User, UserID
 
 class UseCase:
     _hasher: PasswordHasher
-
-    repo: Repository
+    _repo: Repository
 
     def __init__(self, repo: Repository) -> None:
         self._hasher = PasswordHasher()
-        self.repo = repo
+        self._repo = repo
+
+    def find_users(self, *, login: Optional[str] = None) -> Sequence[User]:
+        users = self._repo.find_users(login_like=login)
+
+        return list(map(lambda u: u.map(), users))
 
     def find_user_by_id(self, id: UserID) -> Optional[User]:
-        user = self.repo.find_user_by_id(id)
+        user = self._repo.find_user_by_id(id)
 
         if user is None:
             return None
@@ -25,7 +29,7 @@ class UseCase:
         return user.map()
 
     def find_user_by_login(self, login: str) -> Optional[User]:
-        user = self.repo.find_user_by_login(login)
+        user = self._repo.find_user_by_login(login)
 
         if user is None:
             return None
@@ -33,10 +37,10 @@ class UseCase:
         return user.map()
 
     def create_user(self, login: str, password: str) -> UserID:
-        return self.repo.create_user(login, self._hash_password(password))
+        return self._repo.create_user(login, self._hash_password(password))
 
     def authenticate_user(self, login: str, password: str) -> Optional[User]:
-        user = self.repo.find_user_by_login(login)
+        user = self._repo.find_user_by_login(login)
 
         if user is None:
             return None

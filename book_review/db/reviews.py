@@ -29,7 +29,7 @@ class Review(BaseModel):
 
 class Repository:
     @abstractmethod
-    def create_review(
+    def create_or_update_review(
         self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
     ) -> None:
         pass
@@ -67,13 +67,7 @@ class SQLiteRepository(Repository):
             params["user_id"] = user_id
 
         if params:
-            statements = []
-
-            if "book_id" in params:
-                statements.append("book_id = :book_id")
-
-            if "user_id" in params:
-                statements.append("user_id = :user_id")
+            statements = [f"{col} = :{col}" for col in params.keys()]
 
             query += f" WHERE {' AND '.join(statements)}"
 
@@ -109,7 +103,7 @@ class SQLiteRepository(Repository):
 
             return reviews
 
-    def create_review(
+    def create_or_update_review(
         self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
     ) -> None:
         params = {"user_id": user_id, "book_id": book_id, "rating": rating}
@@ -122,6 +116,10 @@ class SQLiteRepository(Repository):
         query = f"""
         INSERT INTO reviews ({', '.join(columns)})
         VALUES ({', '.join(map(lambda c: ":" + c, columns))})
+        ON CONFLICT (user_id, book_id) DO UPDATE SET
+            rating = excluded.rating,
+            commentary = excluded.commentary,
+            updated_at = CURRENT_TIMESTAMP
         """
 
         with self._connection_supplier() as connection:

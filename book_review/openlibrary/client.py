@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
+from datetime import date
 from enum import Enum
 from typing import Optional, Sequence
 
 import aiohttp
 from pydantic import BaseModel, PositiveInt
-from yarl import URL
 
 import book_review.models.book as models
-
-BASE_URL = URL("https://openlibrary.org/")
 
 QueryParams = list[tuple[str, str]]
 
@@ -50,8 +48,26 @@ class Book(BaseModel):
     publish_year: Sequence[int] = []
     subject: Sequence[str] = []
 
-    def map(self) -> models.BookPreview:
-        raise NotImplementedError()
+    def map(self) -> models.Book:
+        authors = [
+            models.Author(id=key, name=name)
+            for key, name in zip(self.author_key, self.author_name)
+        ]
+
+        first_publishment_date: Optional[date] = None
+        if self.publish_year:
+            first_year = sorted(self.publish_year)[0]
+
+            first_publishment_date = date(year=first_year, month=1, day=1)
+
+        return models.Book(
+            id=self.key,
+            title=self.title,
+            authors=authors,
+            first_publishment_date=first_publishment_date,
+            subjects=self.subject,
+            languages=self.language,
+        )
 
 
 class Client(ABC):
@@ -65,14 +81,21 @@ class Client(ABC):
     async def search_books(self, filter: SearchBooksFilter) -> Sequence[Book]:
         pass
 
+    @abstractmethod
+    async def get_book(self, key: str) -> Optional[Book]:
+        pass
+
 
 class HTTPAPIClient(Client):
     _http_client: aiohttp.ClientSession
 
-    def __init__(self, base_url: URL = BASE_URL) -> None:
+    def __init__(
+        self,
+        client: aiohttp.ClientSession,
+    ) -> None:
         super().__init__()
 
-        self._http_client = aiohttp.ClientSession(base_url)
+        self._http_client = client
 
     @staticmethod
     def _build_search_books_filters_params(filter: SearchBooksFilter) -> QueryParams:
@@ -109,3 +132,6 @@ class HTTPAPIClient(Client):
                 docs: Sequence[Book]
 
             return Response(**await resp.json()).docs
+
+    async def get_book(self, key: str) -> Optional[Book]:
+        raise NotImplementedError()
