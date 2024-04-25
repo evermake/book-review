@@ -49,8 +49,23 @@ class App:
         users: UsersUseCase,
         reviews: ReviewsUseCase,
         openlibrary: OpenlibraryUseCase,
+        title: str = "Book Review Platform",
+        summary: str = """
+        BRP is a dynamic online platform designed to foster a vibrant community of book
+        lovers, where they can share their thoughts, discover new reads, and engage in
+        meaningful discussions. With a user-friendly interface and seamless integration
+        of external APIs, BRP offers an immersive experience for bibliophiles.
+        """,
+        description: str = "",
+        version: str = "0.1.0",
     ) -> None:
-        self._app = FastAPI(debug=settings.DEBUG)
+        self._app = FastAPI(
+            debug=settings.DEBUG,
+            title=title,
+            summary=summary,
+            description=description,
+            version=version,
+        )
 
         self._users = users
         self._reviews = reviews
