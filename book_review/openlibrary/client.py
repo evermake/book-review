@@ -61,10 +61,20 @@ class BookPreview(BaseModel):
             for key, name in zip(self.author_key, self.author_name)
         ]
 
-        first_publishment_date: Optional[date] = None
-        if self.publish_year:
-            first_year = sorted(self.publish_year)[0]
+        first_year: Optional[int] = None
 
+        for year in self.publish_year:
+            if year <= 0:
+                continue
+
+            if first_year is not None:
+                first_year = min(first_year or 1, year)
+            else:
+                first_year = year
+
+        first_publishment_date: Optional[date] = None
+
+        if first_year is not None:
             first_publishment_date = date(year=first_year, month=1, day=1)
 
         return models.BookPreview(
@@ -97,6 +107,16 @@ class Book(BaseModel):
 
 def adjust_key(key: str) -> str:
     return key.split("/")[-1]
+
+
+def normalize_query(query: str) -> str:
+    # ignore case
+    query = query.lower()
+
+    # remove trailing spaces, replace multiple spaces with one
+    query = " ".join(query.split())
+
+    return query
 
 
 class Client(ABC):
@@ -141,7 +161,7 @@ class HTTPAPIClient(Client):
         params: QueryParams = []
 
         if filter.query is not None:
-            params.append(("q", filter.query))
+            params.append(("q", normalize_query(filter.query)))
 
         if filter.sort is not None:
             params.append(("sort", filter.sort))
