@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 
 from book_review.config import settings
+from book_review.db.users import UserExistsError
 from book_review.models.book import CoverID
 from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
@@ -173,7 +174,13 @@ class App:
 
         @app.post("/users", tags=["users"])
         async def create_user(login: str, password: str) -> User:
-            id = self._users.create_user(login, password)
+            try:
+                id = self._users.create_user(login, password)
+            except UserExistsError:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"user {repr(login)} exists",
+                )
 
             user = self._users.find_user_by_id(id)
 

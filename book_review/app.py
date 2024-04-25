@@ -72,10 +72,19 @@ async def _serve_http_app() -> None:
 class App:
     @staticmethod
     def setup() -> None:
+        """
+        Setup the application.
+        """
+
         rich.traceback.install(show_locals=settings.DEBUG)
 
         _apply_migrations()
 
     @staticmethod
     async def run() -> None:
+        """
+        Run the app.
+        Make sure that the setup was called before running this method.
+        """
+
         await _serve_http_app()

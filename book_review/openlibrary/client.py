@@ -106,10 +106,19 @@ class Book(BaseModel):
 
 
 def adjust_key(key: str) -> str:
+    """
+    Adjust openlibrary key from "/works/OL49024" to "OL49024"
+    """
+
     return key.split("/")[-1]
 
 
 def normalize_query(query: str) -> str:
+    """
+    Normalize given query by removing odd spaces and making it lowercase.
+    It is used for a better caching
+    """
+
     # ignore case
     query = query.lower()
 
@@ -128,20 +137,35 @@ class Client(ABC):
 
     @abstractmethod
     async def search_books(self, filter: SearchBooksFilter) -> Sequence[BookPreview]:
+        """
+        Search books with the given filter
+        """
         pass
 
     @abstractmethod
     async def get_book(self, key: str) -> Optional[Book]:
+        """
+        Get specific book by the given key.
+        It will return None if the book was not found.
+        """
         pass
 
     @abstractmethod
     async def get_cover(
         self, id: int, size: CoverSize = CoverSize.Small
     ) -> Optional[bytes]:
+        """
+        Get book or author cover image bytes by its id.
+        It will return None if the cover was not found.
+        """
         pass
 
 
 class HTTPAPIClient(Client):
+    """
+    Openlibrary client based on their HTTP API
+    """
+
     _api: aiohttp.ClientSession
     _covers: aiohttp.ClientSession
 
