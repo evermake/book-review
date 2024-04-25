@@ -122,6 +122,7 @@ class App:
             book = await self._openlibrary.get_book(id)
 
             if book is None:
+                # TODO: add this exception into schema
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"book with id {repr(id)} not found",
@@ -145,6 +146,7 @@ class App:
             )
 
             if cover is None:
+                # TODO: add this exception into schema
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"image with id {repr(id)} not found",
@@ -177,6 +179,7 @@ class App:
             try:
                 id = self._users.create_user(login, password)
             except UserExistsError:
+                # TODO: add this exception into schema
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=f"user {repr(login)} exists",
@@ -203,6 +206,7 @@ class App:
                 user = self._users.find_user_by_id(id)
 
                 if user is None:
+                    # TODO: add this exception into schema
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail=f"user with id {id:r} not found",
@@ -214,6 +218,7 @@ class App:
                 user = self._users.find_user_by_login(login)
 
                 if user is None:
+                    # TODO: add this exception into schema
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail=f"user with login {login:r} not found",
@@ -221,6 +226,7 @@ class App:
 
                 return User.parse(user)
 
+            # TODO: add this exception into schema
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="either id or login is required",
@@ -241,6 +247,7 @@ class App:
             return list(map(lambda r: Review.parse(r), reviews))
 
     def _get_user(self, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+        # TODO: add this exception into schema
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
