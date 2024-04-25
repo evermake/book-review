@@ -16,6 +16,11 @@ class UseCase:
         self._repo = repo
 
     def find_users(self, *, login: Optional[str] = None) -> Sequence[User]:
+        """
+        Find users by the login substring.
+        If the login is not provided it will return all users.
+        """
+
         users = self._repo.find_users(login_like=login)
 
         return list(map(lambda u: u.map(), users))
@@ -37,9 +42,16 @@ class UseCase:
         return user.map()
 
     def create_user(self, login: str, password: str) -> UserID:
+        # TODO: make usecase own UserExistsError and map it
         return self._repo.create_user(login, self._hash_password(password))
 
     def authenticate_user(self, login: str, password: str) -> Optional[User]:
+        """
+        Retrieve a user by its login and password.
+        It will return None if the user was not found or the password is invalid.
+        For security, these errors are made indistinguishable on purpose.
+        """
+
         user = self._repo.find_user_by_login(login)
 
         if user is None:

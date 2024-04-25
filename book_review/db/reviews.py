@@ -9,6 +9,10 @@ import book_review.models.reviews as models
 
 
 class Review(BaseModel):
+    """
+    A review in the repository
+    """
+
     user_id: int
     book_id: str
     rating: int
@@ -32,6 +36,11 @@ class Repository:
     def create_or_update_review(
         self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
     ) -> None:
+        """
+        Create or update review.
+        If the (user_id, book_id) does not exists a new review will be created.
+        Otherwise, rating and commentary will be overwritten.
+        """
         pass
 
     @abstractmethod
@@ -42,6 +51,10 @@ class Repository:
 
 
 class SQLiteRepository(Repository):
+    """
+    Repository that uses SQLite3 backend.
+    """
+
     _connection_supplier: db.ConnectionSupplier
 
     def __init__(self, connection_supplier: db.ConnectionSupplier) -> None:

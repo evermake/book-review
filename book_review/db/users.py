@@ -10,7 +10,16 @@ import book_review.models.user as models
 UserID = models.UserID
 
 
+class UserExistsError(Exception):
+    def __init__(self) -> None:
+        super().__init__("user exists")
+
+
 class User(BaseModel):
+    """
+    A user in the repository.
+    """
+
     id: UserID
     login: str
     password_hash: str
@@ -23,6 +32,10 @@ class User(BaseModel):
 class Repository(ABC):
     @abstractmethod
     def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
+        """
+        Find users by the login substring.
+        If the login is not provided it will return all users.
+        """
         pass
 
     @abstractmethod
@@ -39,6 +52,10 @@ class Repository(ABC):
 
 
 class SQLiteRepository(Repository):
+    """
+    Repository that uses SQLite3 backend.
+    """
+
     _connection_supplier: db.ConnectionSupplier
 
     def __init__(self, connection_supplier: db.ConnectionSupplier) -> None:
@@ -118,15 +135,17 @@ class SQLiteRepository(Repository):
 
     def create_user(self, login: str, password_hash: str) -> int:
         with self._connection_supplier() as connection:
-            cursor = connection.execute(
-                "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
-                (login, password_hash),
-            )
+            try:
+                cursor = connection.execute(
+                    "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
+                    (login, password_hash),
+                )
 
-            row = cursor.fetchone()
+                row = cursor.fetchone()
+                connection.commit()
 
-            connection.commit()
+                (id,) = row
 
-            (id,) = row
-
-            return int(id)
+                return int(id)
+            except sqlite3.IntegrityError:
+                raise UserExistsError()

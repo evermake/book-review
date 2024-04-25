@@ -22,16 +22,18 @@ of external APIs, BRP offers an immersive experience for bibliophiles.
 
 ## Key Features
 
-1. Book Reviews and Ratings: o Users can write and publish detailed reviews for
-   their favorite books. Whether it’s a classic novel, a thrilling mystery, or a
-   thought-provoking non-fiction work, BRP provides a space to express opinions
-   and insights. o Readers can rate books on a scale of 1 to 5 stars, allowing
-   others to gauge the overall quality and popularity of a title.
-2. Book Details and Recommendations: o Leveraging an external API, BRP fetches
-   comprehensive information about books, including author details, publication
-   dates, genres, and cover images. o The platform suggests personalized book
-   recommendations based on users’ reading history, preferences, and trending
-   titles.
+1. Book Reviews and Ratings:
+   - Users can write and publish detailed reviews for their favorite books.
+     Whether it’s a classic novel, a thrilling mystery, or a thought-provoking
+     non-fiction work, BRP provides a space to express opinions and insights.
+   - Readers can rate books on a scale of 1 to 5 stars, allowing others to gauge
+     the overall quality and popularity of a title.
+2. Book Details and Recommendations:
+   - Leveraging an external API, BRP fetches comprehensive information about
+     books, including author details, publication dates, genres, and cover
+     images.
+   - The platform suggests personalized book recommendations based on users’
+     reading history, preferences, and trending titles.
 
 ## Running the project
 

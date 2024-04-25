@@ -61,10 +61,20 @@ class BookPreview(BaseModel):
             for key, name in zip(self.author_key, self.author_name)
         ]
 
-        first_publishment_date: Optional[date] = None
-        if self.publish_year:
-            first_year = sorted(self.publish_year)[0]
+        first_year: Optional[int] = None
 
+        for year in self.publish_year:
+            if year <= 0:
+                continue
+
+            if first_year is not None:
+                first_year = min(first_year or 1, year)
+            else:
+                first_year = year
+
+        first_publishment_date: Optional[date] = None
+
+        if first_year is not None:
             first_publishment_date = date(year=first_year, month=1, day=1)
 
         return models.BookPreview(
@@ -96,7 +106,26 @@ class Book(BaseModel):
 
 
 def adjust_key(key: str) -> str:
+    """
+    Adjust openlibrary key from "/works/OL49024" to "OL49024"
+    """
+
     return key.split("/")[-1]
+
+
+def normalize_query(query: str) -> str:
+    """
+    Normalize given query by removing odd spaces and making it lowercase.
+    It is used for a better caching
+    """
+
+    # ignore case
+    query = query.lower()
+
+    # remove trailing spaces, replace multiple spaces with one
+    query = " ".join(query.split())
+
+    return query
 
 
 class Client(ABC):
@@ -108,20 +137,35 @@ class Client(ABC):
 
     @abstractmethod
     async def search_books(self, filter: SearchBooksFilter) -> Sequence[BookPreview]:
+        """
+        Search books with the given filter
+        """
         pass
 
     @abstractmethod
     async def get_book(self, key: str) -> Optional[Book]:
+        """
+        Get specific book by the given key.
+        It will return None if the book was not found.
+        """
         pass
 
     @abstractmethod
     async def get_cover(
         self, id: int, size: CoverSize = CoverSize.Small
     ) -> Optional[bytes]:
+        """
+        Get book or author cover image bytes by its id.
+        It will return None if the cover was not found.
+        """
         pass
 
 
 class HTTPAPIClient(Client):
+    """
+    Openlibrary client based on their HTTP API
+    """
+
     _api: aiohttp.ClientSession
     _covers: aiohttp.ClientSession
 
@@ -141,7 +185,7 @@ class HTTPAPIClient(Client):
         params: QueryParams = []
 
         if filter.query is not None:
-            params.append(("q", filter.query))
+            params.append(("q", normalize_query(filter.query)))
 
         if filter.sort is not None:
             params.append(("sort", filter.sort))
