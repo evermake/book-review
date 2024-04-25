@@ -8,12 +8,12 @@ from aiohttp_client_cache.backends.sqlite import SQLiteBackend
 from aiohttp_client_cache.session import CachedSession
 from yarl import URL
 
-import book_review.db.repository as db
+import book_review.db as db
 from book_review.config import settings
+from book_review.controller.http.app import App as HTTPApp
 from book_review.db.reviews import SQLiteRepository as ReviewsRepository
 from book_review.db.users import SQLiteRepository as UsersRepository
 from book_review.openlibrary.client import HTTPAPIClient as OpenlibraryClient
-from book_review.ui.http.app import App as HTTPApp
 from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
 from book_review.usecase.users import UseCase as UsersUseCase

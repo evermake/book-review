@@ -12,29 +12,29 @@ QueryParams = list[tuple[str, str]]
 
 
 class CoverSize(str, Enum):
-    Small = "S"
-    Medium = "M"
-    Large = "L"
+    SMALL = "S"
+    MEDIUM = "M"
+    LARGE = "L"
 
 
 class Sort(str, Enum):
-    EditionsCountDesc = "editions"
+    EDITIONS_COUNT_DESC = "editions"
 
-    Old = "old"
-    New = "new"
+    OLD = "old"
+    NEW = "new"
 
-    RatingAsc = "rating asc"
-    RatingDesc = "rating desc"
+    RATING_ASC = "rating asc"
+    RATING_DESC = "rating desc"
 
-    TitleAsc = "title"
+    TITLE_ASC = "title"
 
-    RandomAsc = "random asc"
-    RandomDesc = "random desc"
-    RandomHourly = "random.hourly"
-    RandomDaily = "random.daily"
+    RANDOM_ASC = "random asc"
+    RANDOM_DESC = "random desc"
+    RANDOM_HOURLY = "random.hourly"
+    RANDOM_DAILY = "random.daily"
 
-    KeyAsc = "key asc"
-    KeyDesc = "key desc"
+    KEY_ASC = "key asc"
+    KEY_DESC = "key desc"
 
 
 class SearchBooksFilter(BaseModel):
@@ -152,7 +152,7 @@ class Client(ABC):
 
     @abstractmethod
     async def get_cover(
-        self, id: int, size: CoverSize = CoverSize.Small
+        self, id: int, size: CoverSize = CoverSize.SMALL
     ) -> Optional[bytes]:
         """
         Get book or author cover image bytes by its id.
@@ -236,7 +236,7 @@ class HTTPAPIClient(Client):
             return book
 
     async def get_cover(
-        self, id: int, size: CoverSize = CoverSize.Small
+        self, id: int, size: CoverSize = CoverSize.SMALL
     ) -> Optional[bytes]:
         async with self._covers.get(f"/b/id/{id}-{size.value}.jpg") as resp:
             if resp.status == 404:

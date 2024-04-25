@@ -4,8 +4,8 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-import book_review.db.repository as db
 import book_review.models.user as models
+from book_review.db import ConnectionSupplier, in_memory_connection_supplier
 
 UserID = models.UserID
 
@@ -56,16 +56,16 @@ class SQLiteRepository(Repository):
     Repository that uses SQLite3 backend.
     """
 
-    _connection_supplier: db.ConnectionSupplier
+    _connection_supplier: ConnectionSupplier
 
-    def __init__(self, connection_supplier: db.ConnectionSupplier) -> None:
+    def __init__(self, connection_supplier: ConnectionSupplier) -> None:
         super().__init__()
 
         self._connection_supplier = connection_supplier
 
     @staticmethod
     def in_memory() -> "SQLiteRepository":
-        return SQLiteRepository(db.in_memory_connection_supplier)
+        return SQLiteRepository(in_memory_connection_supplier)
 
     def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
         params: dict[str, str] = {}

@@ -8,7 +8,15 @@ def run(command: str, *args: str) -> None:
     _args = [command, *args]
 
     print(f"+ {' '.join(_args)}")
-    _run(_args, cwd=CWD)
+
+    try:
+        _run(_args, cwd=CWD)
+    except KeyboardInterrupt:
+        exit(0)
+
+
+def serve() -> None:
+    run("python", "book_review/main.py")
 
 
 def test() -> None:
