@@ -101,7 +101,10 @@ class App:
         async def token(
             form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         ) -> Token:
-            user = self._users.authenticate_user(form_data.username, form_data.password)
+            user = await self._users.authenticate_user(
+                form_data.username, form_data.password
+            )
+
             if not user:
                 # TODO: add this exception into schema
                 raise HTTPException(
@@ -169,7 +172,7 @@ class App:
         async def create_or_update_review(
             user: Annotated[User, Depends(self._get_user)], review: ReviewRequest
         ) -> None:
-            self._reviews.create_or_update_review(
+            await self._reviews.create_or_update_review(
                 user_id=user.id,
                 book_id=review.book_id,
                 rating=review.rating,
@@ -182,7 +185,7 @@ class App:
         async def delete_review(
             user: Annotated[User, Depends(self._get_user)], book_id: BookID
         ) -> None:
-            self._reviews.delete_review(user_id=user.id, book_id=book_id)
+            await self._reviews.delete_review(user_id=user.id, book_id=book_id)
 
         @app.get(
             "/reviews", tags=[_Tags.BOOKS.value, _Tags.REVIEWS.value, _Tags.USERS.value]
@@ -191,14 +194,14 @@ class App:
             book_id: Optional[BookID] = None,
             user_id: Optional[UserID] = None,
         ) -> Sequence[Review]:
-            reviews = self._reviews.find_reviews(book_id, user_id)
+            reviews = await self._reviews.find_reviews(book_id, user_id)
 
             return list(map(lambda r: Review.parse(r), reviews))
 
         @app.post("/users", tags=[_Tags.USERS.value])
         async def create_user(login: str, password: str) -> User:
             try:
-                id = self._users.create_user(login, password)
+                id = await self._users.create_user(login, password)
             except UserExistsError:
                 # TODO: add this exception into schema
                 raise HTTPException(
@@ -206,7 +209,7 @@ class App:
                     detail=f"user {repr(login)} exists",
                 )
 
-            user = self._users.find_user_by_id(id)
+            user = await self._users.find_user_by_id(id)
 
             if user is None:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -215,7 +218,7 @@ class App:
 
         @app.get("/users", tags=[_Tags.USERS.value])
         async def get_users(login: Optional[str] = None) -> Sequence[User]:
-            users = self._users.find_users(login=login)
+            users = await self._users.find_users(login=login)
 
             return list(map(lambda u: User.parse(u), users))
 
@@ -224,7 +227,7 @@ class App:
             id: Optional[UserID] = None, login: Optional[str] = None
         ) -> User:
             if id is not None:
-                user = self._users.find_user_by_id(id)
+                user = await self._users.find_user_by_id(id)
 
                 if user is None:
                     # TODO: add this exception into schema
@@ -236,7 +239,7 @@ class App:
                 return User.parse(user)
 
             if login is not None:
-                user = self._users.find_user_by_login(login)
+                user = await self._users.find_user_by_login(login)
 
                 if user is None:
                     # TODO: add this exception into schema
@@ -263,11 +266,11 @@ class App:
         async def get_current_user_reviews(
             user: Annotated[User, Depends(self._get_user)],
         ) -> Sequence[Review]:
-            reviews = self._reviews.find_reviews(user_id=user.id)
+            reviews = await self._reviews.find_reviews(user_id=user.id)
 
             return list(map(lambda r: Review.parse(r), reviews))
 
-    def _get_user(self, token: Annotated[str, Depends(_OAUTH2_SCHEME)]) -> User:
+    async def _get_user(self, token: Annotated[str, Depends(_OAUTH2_SCHEME)]) -> User:
         # TODO: add this exception into schema
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -289,7 +292,7 @@ class App:
         except JWTError:
             raise credentials_exception
 
-        user = self._users.find_user_by_login(token_data.login)
+        user = await self._users.find_user_by_login(token_data.login)
 
         if user is None:
             raise credentials_exception

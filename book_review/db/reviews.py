@@ -33,14 +33,14 @@ class Review(BaseModel):
 
 class Repository:
     @abstractmethod
-    def delete_review(self, *, user_id: int, book_id: str) -> None:
+    async def delete_review(self, *, user_id: int, book_id: str) -> None:
         """
         Delete a review.
         """
         pass
 
     @abstractmethod
-    def create_or_update_review(
+    async def create_or_update_review(
         self,
         *,
         user_id: int,
@@ -56,7 +56,7 @@ class Repository:
         pass
 
     @abstractmethod
-    def find_reviews(
+    async def find_reviews(
         self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> Sequence[Review]:
         pass
@@ -79,7 +79,7 @@ class SQLiteRepository(Repository):
     def in_memory(cls) -> "SQLiteRepository":
         return cls(in_memory_connection_supplier)
 
-    def find_reviews(
+    async def find_reviews(
         self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> Sequence[Review]:
         query = f"SELECT user_id, book_id, rating, commentary, created_at, updated_at FROM {self._table}"
@@ -97,9 +97,9 @@ class SQLiteRepository(Repository):
 
             query += f" WHERE {' AND '.join(statements)}"
 
-        with self._connection_supplier() as connection:
-            cursor = connection.execute(query, params)
-            rows = cursor.fetchall()
+        async with self._connection_supplier() as connection:
+            cursor = await connection.execute(query, params)
+            rows = await cursor.fetchall()
 
             reviews: list[Review] = []
 
@@ -129,7 +129,7 @@ class SQLiteRepository(Repository):
 
             return reviews
 
-    def create_or_update_review(
+    async def create_or_update_review(
         self,
         *,
         user_id: int,
@@ -153,14 +153,12 @@ class SQLiteRepository(Repository):
             updated_at = CURRENT_TIMESTAMP
         """
 
-        with self._connection_supplier() as connection:
+        async with self._connection_supplier() as connection:
             connection.execute(query, params)
-            connection.commit()
 
-    def delete_review(self, *, user_id: int, book_id: str) -> None:
-        with self._connection_supplier() as connection:
+    async def delete_review(self, *, user_id: int, book_id: str) -> None:
+        async with self._connection_supplier() as connection:
             connection.execute(
                 f"DELETE FROM {self._table} WHERE user_id = ? AND book_id = ?",
                 (user_id, book_id),
             )
-            connection.commit()

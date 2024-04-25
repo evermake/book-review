@@ -1,13 +1,13 @@
-import sqlite3
 from typing import Callable
 
+import aiosqlite
 import yoyo
 
-ConnectionSupplier = Callable[[], sqlite3.Connection]
+ConnectionSupplier = Callable[[], aiosqlite.Connection]
 
 
-def in_memory_connection_supplier() -> sqlite3.Connection:
-    return sqlite3.connect(":memory:")
+def in_memory_connection_supplier() -> aiosqlite.Connection:
+    return aiosqlite.connect(":memory:")
 
 
 def apply_migrations(db: str) -> None:

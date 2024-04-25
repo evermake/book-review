@@ -2,6 +2,7 @@ import sqlite3
 from abc import ABC, abstractmethod
 from typing import Optional, Sequence
 
+import aiosqlite
 from pydantic import BaseModel
 
 import book_review.models.user as models
@@ -31,7 +32,7 @@ class User(BaseModel):
 
 class Repository(ABC):
     @abstractmethod
-    def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
+    async def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
         """
         Find users by the login substring.
         If the login is not provided it will return all users.
@@ -39,15 +40,15 @@ class Repository(ABC):
         pass
 
     @abstractmethod
-    def find_user_by_id(self, id: UserID) -> Optional[User]:
+    async def find_user_by_id(self, id: UserID) -> Optional[User]:
         pass
 
     @abstractmethod
-    def find_user_by_login(self, login: str) -> Optional[User]:
+    async def find_user_by_login(self, login: str) -> Optional[User]:
         pass
 
     @abstractmethod
-    def create_user(self, login: str, password_hash: str) -> int:
+    async def create_user(self, login: str, password_hash: str) -> int:
         pass
 
 
@@ -63,11 +64,11 @@ class SQLiteRepository(Repository):
 
         self._connection_supplier = connection_supplier
 
-    @staticmethod
-    def in_memory() -> "SQLiteRepository":
-        return SQLiteRepository(in_memory_connection_supplier)
+    @classmethod
+    def in_memory(cls) -> "SQLiteRepository":
+        return cls(in_memory_connection_supplier)
 
-    def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
+    async def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
         params: dict[str, str] = {}
 
         if login_like is not None:
@@ -80,9 +81,9 @@ class SQLiteRepository(Repository):
 
             query += f" WHERE {' AND '.join(statements)}"
 
-        with self._connection_supplier() as connection:
-            cursor = connection.execute(query, params)
-            rows = cursor.fetchall()
+        async with self._connection_supplier() as connection:
+            cursor = await connection.execute(query, params)
+            rows = await cursor.fetchall()
 
             users: list[User] = []
 
@@ -103,26 +104,26 @@ class SQLiteRepository(Repository):
 
             return users
 
-    def find_user_by_id(self, id: UserID) -> Optional[User]:
-        with self._connection_supplier() as connection:
-            cursor = connection.execute(
+    async def find_user_by_id(self, id: UserID) -> Optional[User]:
+        async with self._connection_supplier() as connection:
+            cursor = await connection.execute(
                 "SELECT id, login, password_hash, created_at FROM users WHERE id = ?",
                 (id,),
             )
 
-            return self._fetch_user(cursor)
+            return await self._fetch_user(cursor)
 
-    def find_user_by_login(self, login: str) -> Optional[User]:
-        with self._connection_supplier() as connection:
-            cursor = connection.execute(
+    async def find_user_by_login(self, login: str) -> Optional[User]:
+        async with self._connection_supplier() as connection:
+            cursor = await connection.execute(
                 "SELECT id, login, password_hash, created_at FROM users WHERE login = ?",
                 (login,),
             )
 
-            return self._fetch_user(cursor)
+            return await self._fetch_user(cursor)
 
-    def _fetch_user(self, cursor: sqlite3.Cursor) -> Optional[User]:
-        row = cursor.fetchone()
+    async def _fetch_user(self, cursor: aiosqlite.Cursor) -> Optional[User]:
+        row = await cursor.fetchone()
 
         if row is None:
             return None
@@ -133,16 +134,17 @@ class SQLiteRepository(Repository):
             id=id, login=login, password_hash=password_hash, created_at=created_at
         )
 
-    def create_user(self, login: str, password_hash: str) -> int:
-        with self._connection_supplier() as connection:
+    async def create_user(self, login: str, password_hash: str) -> int:
+        async with self._connection_supplier() as connection:
             try:
-                cursor = connection.execute(
+                cursor = await connection.execute(
                     "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
                     (login, password_hash),
                 )
 
-                row = cursor.fetchone()
-                connection.commit()
+                row = await cursor.fetchone()
+
+                assert row is not None
 
                 (id,) = row
 

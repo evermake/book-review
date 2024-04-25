@@ -1,6 +1,6 @@
 import os.path
-import sqlite3
 
+import aiosqlite
 import rich.traceback
 from aiohttp import ClientSession
 from aiohttp_client_cache.backends.base import CacheBackend
@@ -33,7 +33,7 @@ def _apply_migrations() -> None:
 
 
 def _get_database_connection_supplier() -> db.ConnectionSupplier:
-    return lambda: sqlite3.connect(settings.DB)
+    return lambda: aiosqlite.connect(settings.DB)
 
 
 def _get_cache_backend() -> CacheBackend:

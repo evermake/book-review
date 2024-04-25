@@ -19,6 +19,8 @@ rich = "^13.7.1"
 python-jose = { extras = ["cryptography"], version = "^3.3.0" }
 python-multipart = "^0.0.9"
 aiohttp-client-cache = { extras = ["sqlite"], version = "^0.11.0" }
+locust = "^2.26.0"
+aiosqlite = "^0.20.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
@@ -59,7 +61,11 @@ skips = ["B101"]
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration"]
 filterwarnings = ["ignore::DeprecationWarning:yoyo.*:"]
-# asyncio_mode = "auto"
+
+[tool.locust]
+locustfile = "locust/locust.py"
+host = "http://127.0.0.1:9000"  # adjust the port accordingly
+users = 100
 
 [build-system]
 requires = ["poetry-core"]
