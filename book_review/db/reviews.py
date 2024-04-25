@@ -4,8 +4,8 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-import book_review.db.repository as db
 import book_review.models.reviews as models
+from book_review.db import ConnectionSupplier, in_memory_connection_supplier
 
 
 class Review(BaseModel):
@@ -33,8 +33,20 @@ class Review(BaseModel):
 
 class Repository:
     @abstractmethod
+    def delete_review(self, *, user_id: int, book_id: str) -> None:
+        """
+        Delete a review.
+        """
+        pass
+
+    @abstractmethod
     def create_or_update_review(
-        self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
+        self,
+        *,
+        user_id: int,
+        book_id: str,
+        rating: int,
+        commentary: Optional[str] = None,
     ) -> None:
         """
         Create or update review.
@@ -45,7 +57,7 @@ class Repository:
 
     @abstractmethod
     def find_reviews(
-        self, book_id: Optional[str] = None, user_id: Optional[int] = None
+        self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> Sequence[Review]:
         pass
 
@@ -55,21 +67,22 @@ class SQLiteRepository(Repository):
     Repository that uses SQLite3 backend.
     """
 
-    _connection_supplier: db.ConnectionSupplier
+    _connection_supplier: ConnectionSupplier
+    _table = "reviews"
 
-    def __init__(self, connection_supplier: db.ConnectionSupplier) -> None:
+    def __init__(self, connection_supplier: ConnectionSupplier) -> None:
         super().__init__()
 
         self._connection_supplier = connection_supplier
 
-    @staticmethod
-    def in_memory() -> "SQLiteRepository":
-        return SQLiteRepository(db.in_memory_connection_supplier)
+    @classmethod
+    def in_memory(cls) -> "SQLiteRepository":
+        return cls(in_memory_connection_supplier)
 
     def find_reviews(
-        self, book_id: Optional[str] = None, user_id: Optional[int] = None
+        self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> Sequence[Review]:
-        query = "SELECT user_id, book_id, rating, commentary, created_at, updated_at FROM reviews"
+        query = f"SELECT user_id, book_id, rating, commentary, created_at, updated_at FROM {self._table}"
 
         params: dict[str, str | int] = dict()
 
@@ -117,7 +130,12 @@ class SQLiteRepository(Repository):
             return reviews
 
     def create_or_update_review(
-        self, user_id: int, book_id: str, rating: int, commentary: Optional[str] = None
+        self,
+        *,
+        user_id: int,
+        book_id: str,
+        rating: int,
+        commentary: Optional[str] = None,
     ) -> None:
         params = {"user_id": user_id, "book_id": book_id, "rating": rating}
 
@@ -127,7 +145,7 @@ class SQLiteRepository(Repository):
         columns = params.keys()
 
         query = f"""
-        INSERT INTO reviews ({', '.join(columns)})
+        INSERT INTO {self._table} ({', '.join(columns)})
         VALUES ({', '.join(map(lambda c: ":" + c, columns))})
         ON CONFLICT (user_id, book_id) DO UPDATE SET
             rating = excluded.rating,
@@ -137,4 +155,12 @@ class SQLiteRepository(Repository):
 
         with self._connection_supplier() as connection:
             connection.execute(query, params)
+            connection.commit()
+
+    def delete_review(self, *, user_id: int, book_id: str) -> None:
+        with self._connection_supplier() as connection:
+            connection.execute(
+                f"DELETE FROM {self._table} WHERE user_id = ? AND book_id = ?",
+                (user_id, book_id),
+            )
             connection.commit()

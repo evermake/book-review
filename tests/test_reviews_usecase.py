@@ -13,8 +13,12 @@ def test_create_review() -> None:
     expected_commentary = "Laboriosam reprehenderit dolores porro vitae."
 
     class MockRepo(db.Repository):
+        def delete_review(self, *, user_id: int, book_id: str) -> None:
+            raise Exception()
+
         def create_or_update_review(
             self,
+            *,
             user_id: int,
             book_id: str,
             rating: int,
@@ -26,7 +30,7 @@ def test_create_review() -> None:
             assert commentary == expected_commentary
 
         def find_reviews(
-            self, book_id: Optional[str] = None, user_id: Optional[int] = None
+            self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
         ) -> Sequence[db.Review]:
             raise Exception()
 
@@ -57,8 +61,12 @@ def test_find_reviews() -> None:
         expected_reviews.append(review)
 
     class MockRepo(db.Repository):
+        def delete_review(self, *, user_id: int, book_id: str) -> None:
+            raise Exception()
+
         def create_or_update_review(
             self,
+            *,
             user_id: int,
             book_id: str,
             rating: int,
@@ -67,7 +75,7 @@ def test_find_reviews() -> None:
             raise Exception()
 
         def find_reviews(
-            self, book_id: Optional[str] = None, user_id: Optional[int] = None
+            self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
         ) -> Sequence[db.Review]:
             assert book_id == expected_book_id
             assert user_id == expected_user_id

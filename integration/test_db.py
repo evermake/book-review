@@ -9,7 +9,7 @@ from pytest_subtests import SubTests
 
 import book_review.db.reviews as db_reviews
 import book_review.db.users as db
-from book_review.db.repository import ConnectionSupplier, apply_migrations
+from book_review.db import ConnectionSupplier, apply_migrations
 
 
 @pytest.fixture
@@ -105,7 +105,10 @@ def test_reviews_create_and_find(
 
     for p in mock_reviews:
         reviews_repo.create_or_update_review(
-            p.user_id, p.book_id, p.rating, p.commentary
+            user_id=p.user_id,
+            book_id=p.book_id,
+            rating=p.rating,
+            commentary=p.commentary,
         )
 
     with subtests.test("find all reviews"):

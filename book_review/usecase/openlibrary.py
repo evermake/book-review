@@ -28,6 +28,6 @@ class UseCase:
         return book.map()
 
     async def get_cover(
-        self, id: int, size: CoverSize = CoverSize.Small
+        self, id: int, size: CoverSize = CoverSize.SMALL
     ) -> Optional[bytes]:
         return await self._client.get_cover(id, size)
