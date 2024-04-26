@@ -5,7 +5,7 @@ from typing import Annotated, Any, AsyncGenerator, Optional, Sequence
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
@@ -166,8 +166,8 @@ class App:
             response_class=Response,
             tags=[_Tags.BOOKS.value],
         )
-        @cache(expire=60 * 60 * 24)
         async def get_cover(id: CoverID, size: CoverSize = CoverSize.SMALL) -> Response:
+            # TODO: stream the response instead
             cover = await self._openlibrary.get_cover(
                 id,
                 size,
