@@ -1,20 +1,25 @@
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Annotated, Any, Optional, Sequence
+from typing import Annotated, Any, AsyncGenerator, Optional, Sequence
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.decorator import cache
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
 from book_review.config import settings
-from book_review.db.users import UserExistsError
 from book_review.models.book import CoverID
 from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
 from book_review.usecase.users import UseCase as UsersUseCase
 
+from .coder import ORJSONCoder
 from .models import (
     Book,
     BookID,
@@ -68,12 +73,20 @@ class App:
         description: str = "",
         version: str = "0.1.0",
     ) -> None:
+        @asynccontextmanager
+        async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+            FastAPICache.init(InMemoryBackend(), coder=ORJSONCoder)
+
+            yield
+
         self._app = FastAPI(
             debug=settings.DEBUG,
             title=title,
             summary=summary,
             description=description,
             version=version,
+            lifespan=lifespan,
+            default_response_class=ORJSONResponse,
         )
 
         self._users = users
@@ -101,7 +114,10 @@ class App:
         async def token(
             form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         ) -> Token:
-            user = self._users.authenticate_user(form_data.username, form_data.password)
+            user = await self._users.authenticate_user(
+                form_data.username, form_data.password
+            )
+
             if not user:
                 # TODO: add this exception into schema
                 raise HTTPException(
@@ -121,12 +137,14 @@ class App:
             return Token(access_token=access_token, token_type="bearer")
 
         @app.get("/books", tags=[_Tags.BOOKS.value])
+        @cache(expire=60 * 60 * 24)
         async def search_books(query: str) -> Sequence[BookPreview]:
             books = await self._openlibrary.search_books_previews(query)
 
-            return list(map(lambda b: BookPreview.parse(b), books))
+            return list(map(BookPreview.parse, books))
 
         @app.get("/books/{id}", tags=[_Tags.BOOKS.value])
+        @cache(expire=60 * 60 * 24)
         async def get_book(id: BookID) -> Book:
             book = await self._openlibrary.get_book(id)
 
@@ -149,6 +167,7 @@ class App:
             tags=[_Tags.BOOKS.value],
         )
         async def get_cover(id: CoverID, size: CoverSize = CoverSize.SMALL) -> Response:
+            # TODO: stream the response instead
             cover = await self._openlibrary.get_cover(
                 id,
                 size,
@@ -169,7 +188,7 @@ class App:
         async def create_or_update_review(
             user: Annotated[User, Depends(self._get_user)], review: ReviewRequest
         ) -> None:
-            self._reviews.create_or_update_review(
+            await self._reviews.create_or_update_review(
                 user_id=user.id,
                 book_id=review.book_id,
                 rating=review.rating,
@@ -182,31 +201,32 @@ class App:
         async def delete_review(
             user: Annotated[User, Depends(self._get_user)], book_id: BookID
         ) -> None:
-            self._reviews.delete_review(user_id=user.id, book_id=book_id)
+            await self._reviews.delete_review(user_id=user.id, book_id=book_id)
 
         @app.get(
             "/reviews", tags=[_Tags.BOOKS.value, _Tags.REVIEWS.value, _Tags.USERS.value]
         )
+        @cache(5)
         async def find_reviews(
             book_id: Optional[BookID] = None,
             user_id: Optional[UserID] = None,
         ) -> Sequence[Review]:
-            reviews = self._reviews.find_reviews(book_id, user_id)
+            reviews = await self._reviews.find_reviews(book_id, user_id)
 
-            return list(map(lambda r: Review.parse(r), reviews))
+            return list(map(Review.parse, reviews))
 
         @app.post("/users", tags=[_Tags.USERS.value])
         async def create_user(login: str, password: str) -> User:
-            try:
-                id = self._users.create_user(login, password)
-            except UserExistsError:
+            user = await self._users.find_user_by_login(login)
+            if user is not None:
                 # TODO: add this exception into schema
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=f"user {repr(login)} exists",
                 )
 
-            user = self._users.find_user_by_id(id)
+            id = await self._users.create_user(login, password)
+            user = await self._users.find_user_by_id(id)
 
             if user is None:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -214,17 +234,19 @@ class App:
             return User(id=user.id, login=user.login, created_at=user.created_at)
 
         @app.get("/users", tags=[_Tags.USERS.value])
+        @cache(5)
         async def get_users(login: Optional[str] = None) -> Sequence[User]:
-            users = self._users.find_users(login=login)
+            users = await self._users.find_users(login=login)
 
-            return list(map(lambda u: User.parse(u), users))
+            return list(map(User.parse, users))
 
         @app.get("/users/single", tags=[_Tags.USERS.value])
+        @cache(5)
         async def get_single_user(
             id: Optional[UserID] = None, login: Optional[str] = None
         ) -> User:
             if id is not None:
-                user = self._users.find_user_by_id(id)
+                user = await self._users.find_user_by_id(id)
 
                 if user is None:
                     # TODO: add this exception into schema
@@ -236,7 +258,7 @@ class App:
                 return User.parse(user)
 
             if login is not None:
-                user = self._users.find_user_by_login(login)
+                user = await self._users.find_user_by_login(login)
 
                 if user is None:
                     # TODO: add this exception into schema
@@ -254,20 +276,22 @@ class App:
             )
 
         @app.get("/users/me", tags=[_Tags.USERS.value])
+        @cache(5)
         async def get_current_user(
             user: Annotated[User, Depends(self._get_user)],
         ) -> User:
             return user
 
         @app.get("/users/me/reviews", tags=[_Tags.USERS.value, _Tags.REVIEWS.value])
+        @cache(5)
         async def get_current_user_reviews(
             user: Annotated[User, Depends(self._get_user)],
         ) -> Sequence[Review]:
-            reviews = self._reviews.find_reviews(user_id=user.id)
+            reviews = await self._reviews.find_reviews(user_id=user.id)
 
-            return list(map(lambda r: Review.parse(r), reviews))
+            return list(map(Review.parse, reviews))
 
-    def _get_user(self, token: Annotated[str, Depends(_OAUTH2_SCHEME)]) -> User:
+    async def _get_user(self, token: Annotated[str, Depends(_OAUTH2_SCHEME)]) -> User:
         # TODO: add this exception into schema
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -289,7 +313,7 @@ class App:
         except JWTError:
             raise credentials_exception
 
-        user = self._users.find_user_by_login(token_data.login)
+        user = await self._users.find_user_by_login(token_data.login)
 
         if user is None:
             raise credentials_exception

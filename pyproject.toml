@@ -18,12 +18,14 @@ dynaconf = "^3.2.5"
 rich = "^13.7.1"
 python-jose = { extras = ["cryptography"], version = "^3.3.0" }
 python-multipart = "^0.0.9"
-aiohttp-client-cache = { extras = ["sqlite"], version = "^0.11.0" }
+locust = "^2.26.0"
+aiosqlite = "^0.20.0"
+fastapi-cache2 = { extras = ["memcache"], version = "^0.2.1" }
+orjson = "^3.10.1"
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.29" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
-yoyo-migrations = "^8.2.0"
-setuptools = "^69.5.1"
 mypy = "^1.9.0"
 pytest = "^8.1.1"
 pytest-subtests = "^0.12.1"
@@ -39,15 +41,11 @@ typecheck = "tools:typecheck"
 check = "tools:check"
 security = "tools:security"
 
-migrations-apply = "tools:migrations_apply"
-migrations-rollback = "tools:migrations_rollback"
-migrations-list = "tools:migrations_list"
-migrations-new = "tools:migrations_new"
-
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
+exclude = ["locust"]
 
 [tool.ruff.lint]
 extend-select = ["I"]
@@ -58,8 +56,11 @@ skips = ["B101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration"]
-filterwarnings = ["ignore::DeprecationWarning:yoyo.*:"]
-# asyncio_mode = "auto"
+
+[tool.locust]
+locustfile = "locust/locust.py"
+host = "http://127.0.0.1:9000"  # adjust the port accordingly
+users = 100
 
 [build-system]
 requires = ["poetry-core"]
