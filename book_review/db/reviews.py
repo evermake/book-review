@@ -75,10 +75,6 @@ class SQLiteRepository(Repository):
 
         self._pool = pool
 
-    # @classmethod
-    # def in_memory(cls) -> "SQLiteRepository":
-    #     return cls(in_memory_connection_supplier)
-
     async def find_reviews(
         self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> Sequence[Review]:
@@ -98,36 +94,34 @@ class SQLiteRepository(Repository):
             query += f" WHERE {' AND '.join(statements)}"
 
         async with self._pool.resource() as connection:
-            cursor = await connection.execute(query, params)
-            rows = await cursor.fetchall()
+            async with connection.execute(query, params) as cursor:
+                reviews: list[Review] = []
 
-            reviews: list[Review] = []
+                async for row in cursor:
+                    (
+                        user_id,
+                        book_id,
+                        rating,
+                        commentary,
+                        created_at,
+                        updated_at,
+                    ) = row
 
-            for row in rows:
-                (
-                    user_id,
-                    book_id,
-                    rating,
-                    commentary,
-                    created_at,
-                    updated_at,
-                ) = row
+                    assert user_id is not None
+                    assert book_id is not None
 
-                assert user_id is not None
-                assert book_id is not None
+                    review = Review(
+                        user_id=user_id,
+                        book_id=book_id,
+                        rating=rating,
+                        commentary=commentary,
+                        created_at=created_at,
+                        updated_at=updated_at,
+                    )
 
-                review = Review(
-                    user_id=user_id,
-                    book_id=book_id,
-                    rating=rating,
-                    commentary=commentary,
-                    created_at=created_at,
-                    updated_at=updated_at,
-                )
+                    reviews.append(review)
 
-                reviews.append(review)
-
-            return reviews
+                return reviews
 
     async def create_or_update_review(
         self,
@@ -154,11 +148,13 @@ class SQLiteRepository(Repository):
         """
 
         async with self._pool.resource() as connection:
-            connection.execute(query, params)
+            await connection.execute(query, params)
+            await connection.commit()
 
     async def delete_review(self, *, user_id: int, book_id: str) -> None:
         async with self._pool.resource() as connection:
-            connection.execute(
+            await connection.execute(
                 f"DELETE FROM {self._table} WHERE user_id = ? AND book_id = ?",
                 (user_id, book_id),
             )
+            await connection.commit()

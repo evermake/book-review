@@ -11,11 +11,6 @@ from book_review.db import ConnectionPool
 UserID = models.UserID
 
 
-class UserExistsError(Exception):
-    def __init__(self) -> None:
-        super().__init__("user exists")
-
-
 class User(BaseModel):
     """
     A user in the repository.
@@ -64,10 +59,6 @@ class SQLiteRepository(Repository):
 
         self._pool = pool
 
-    # @classmethod
-    # def in_memory(cls) -> "SQLiteRepository":
-    #     return cls(in_memory_connection_supplier)
-
     async def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
         params: dict[str, str] = {}
 
@@ -82,27 +73,25 @@ class SQLiteRepository(Repository):
             query += f" WHERE {' AND '.join(statements)}"
 
         async with self._pool.resource() as connection:
-            cursor = await connection.execute(query, params)
-            rows = await cursor.fetchall()
+            async with connection.execute(query, params) as cursor:
+                users: list[User] = []
 
-            users: list[User] = []
+                async for row in cursor:
+                    (id, login, password_hash, created_at) = row
 
-            for row in rows:
-                (id, login, password_hash, created_at) = row
+                    assert id is not None
+                    assert login is not None
 
-                assert id is not None
-                assert login is not None
+                    user = User(
+                        id=id,
+                        login=login,
+                        password_hash=password_hash,
+                        created_at=created_at,
+                    )
 
-                user = User(
-                    id=id,
-                    login=login,
-                    password_hash=password_hash,
-                    created_at=created_at,
-                )
+                    users.append(user)
 
-                users.append(user)
-
-            return users
+                return users
 
     async def find_user_by_id(self, id: UserID) -> Optional[User]:
         async with self._pool.resource() as connection:
@@ -136,18 +125,16 @@ class SQLiteRepository(Repository):
 
     async def create_user(self, login: str, password_hash: str) -> int:
         async with self._pool.resource() as connection:
-            try:
-                cursor = await connection.execute(
-                    "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
-                    (login, password_hash),
-                )
+            cursor = await connection.execute(
+                "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",
+                (login, password_hash),
+            )
+            await connection.commit()
 
-                row = await cursor.fetchone()
+            row = await cursor.fetchone()
 
-                assert row is not None
+            assert row is not None
 
-                (id,) = row
+            (id,) = row
 
-                return int(id)
-            except sqlite3.IntegrityError:
-                raise UserExistsError()
+            return int(id)

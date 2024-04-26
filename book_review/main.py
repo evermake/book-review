@@ -7,11 +7,12 @@ from book_review.app import App
 
 
 def main() -> None:
-    App.setup()
+    app = App()
+    app.setup()
 
     if sys.version_info >= (3, 11):
         with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
-            runner.run(App.run())
+            runner.run(app.run())
     else:
         uvloop.install()
         asyncio.run(main())

@@ -1,9 +1,11 @@
 import os
 import uuid
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Generator, Optional
+from typing import Optional
 
 import pytest
+import pytest_asyncio
 from pytest_subtests import SubTests
 
 import book_review.db.reviews as db_reviews
@@ -11,29 +13,32 @@ import book_review.db.users as db
 from book_review.db import ConnectionPool, apply_migrations
 
 
-@pytest.fixture
-def pool() -> Generator[ConnectionPool, None, None]:
+@pytest_asyncio.fixture
+async def pool() -> AsyncGenerator[ConnectionPool, None]:
     # can't use :memory: due to yoyo not supporting it
     DB = f"db.test.{uuid.uuid4()}.sqlite3"
 
     apply_migrations(f"sqlite:///{DB}")
 
-    yield ConnectionPool(DB)
+    pool = ConnectionPool(DB, max_connections=10)
 
+    yield pool
+
+    await pool.close()
     os.remove(DB)
 
 
-@pytest.fixture
-def users_repo(
+@pytest_asyncio.fixture
+async def users_repo(
     pool: ConnectionPool,
-) -> Generator[db.Repository, None, None]:
+) -> AsyncGenerator[db.Repository, None]:
     yield db.SQLiteRepository(pool)
 
 
-@pytest.fixture
-def reviews_repo(
+@pytest_asyncio.fixture
+async def reviews_repo(
     pool: ConnectionPool,
-) -> Generator[db_reviews.Repository, None, None]:
+) -> AsyncGenerator[db_reviews.Repository, None]:
     yield db_reviews.SQLiteRepository(pool)
 
 
@@ -117,6 +122,8 @@ async def test_reviews_create_and_find(
 
     with subtests.test("find all reviews"):
         reviews = await reviews_repo.find_reviews()
+
+        print(reviews)
 
         expected_pairs = map(lambda p: (p.user_id, p.book_id), mock_reviews)
         actual_pairs = map(lambda r: (r.user_id, r.book_id), reviews)

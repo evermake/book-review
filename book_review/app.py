@@ -1,10 +1,9 @@
 import os.path
+from typing import Any
 
+import orjson
 import rich.traceback
 from aiohttp import ClientSession
-from aiohttp_client_cache.backends.base import CacheBackend
-from aiohttp_client_cache.backends.sqlite import SQLiteBackend
-from aiohttp_client_cache.session import CachedSession
 from yarl import URL
 
 import book_review.db as db
@@ -31,46 +30,19 @@ def _apply_migrations() -> None:
     db.apply_migrations(f"sqlite:///{abs}")
 
 
-def _get_database_connection_supplier() -> db.ConnectionPool:
+def _get_db_connection_pool() -> db.ConnectionPool:
     return db.ConnectionPool(settings.DB, max_connections=500)
 
 
-def _get_cache_backend() -> CacheBackend:
-    return SQLiteBackend(expire_after=settings.CACHE_EXPIRE_MINUTES, autoclose=True)
+def _get_client_session(base_url: URL) -> ClientSession:
+    def encoder(value: Any) -> str:
+        return orjson.dumps(value).decode()
 
-
-def _get_aiohttp_client_session(base_url: URL, *, cache: bool = False) -> ClientSession:
-    if cache:
-        session: ClientSession = CachedSession(base_url, cache=_get_cache_backend())
-        return session
-
-    return ClientSession(base_url)
-
-
-async def _serve_http_app() -> None:
-    connection_supplier = _get_database_connection_supplier()
-
-    app = HTTPApp(
-        users=UsersUseCase(UsersRepository(connection_supplier)),
-        reviews=ReviewsUseCase(ReviewsRepository(connection_supplier)),
-        openlibrary=OpenlibraryUseCase(
-            OpenlibraryClient(
-                api_session=_get_aiohttp_client_session(
-                    URL(settings.OPENLIBRARY_BASE_URL), cache=True
-                ),
-                covers_session=_get_aiohttp_client_session(
-                    URL(settings.OPENLIBRARY_COVERS_BASE_URL)
-                ),
-            )
-        ),
-    )
-
-    await app.serve()
+    return ClientSession(base_url, json_serialize=encoder)
 
 
 class App:
-    @staticmethod
-    def setup() -> None:
+    def setup(self) -> None:
         """
         Setup the application.
         """
@@ -79,11 +51,28 @@ class App:
 
         _apply_migrations()
 
-    @staticmethod
-    async def run() -> None:
+    async def _serve_http_app(self) -> None:
+        pool = _get_db_connection_pool()
+
+        http_app = HTTPApp(
+            users=UsersUseCase(UsersRepository(pool)),
+            reviews=ReviewsUseCase(ReviewsRepository(pool)),
+            openlibrary=OpenlibraryUseCase(
+                OpenlibraryClient(
+                    api_session=_get_client_session(URL(settings.OPENLIBRARY_BASE_URL)),
+                    covers_session=_get_client_session(
+                        URL(settings.OPENLIBRARY_COVERS_BASE_URL)
+                    ),
+                )
+            ),
+        )
+
+        await http_app.serve()
+
+    async def run(self) -> None:
         """
         Run the app.
         Make sure that the setup was called before running this method.
         """
 
-        await _serve_http_app()
+        await self._serve_http_app()

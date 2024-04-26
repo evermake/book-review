@@ -1,15 +1,22 @@
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Annotated, Any, Optional, Sequence
+from typing import Annotated, Any, AsyncGenerator, Optional, Sequence
 
+import orjson
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.coder import Coder
+from fastapi_cache.decorator import cache
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
 from book_review.config import settings
-from book_review.db.users import UserExistsError
 from book_review.models.book import CoverID
 from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
@@ -45,6 +52,20 @@ class TokenData(BaseModel):
     login: str
 
 
+class ORJSONCoder(Coder):
+    @classmethod
+    def encode(cls, value: Any) -> str:
+        return orjson.dumps(
+            value,
+            default=jsonable_encoder,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
+        ).decode()
+
+    @classmethod
+    def decode(cls, value: str) -> Any:
+        return orjson.loads(value)
+
+
 class App:
     _app: FastAPI
 
@@ -68,12 +89,20 @@ class App:
         description: str = "",
         version: str = "0.1.0",
     ) -> None:
+        @asynccontextmanager
+        async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+            FastAPICache.init(InMemoryBackend(), coder=ORJSONCoder)
+
+            yield
+
         self._app = FastAPI(
             debug=settings.DEBUG,
             title=title,
             summary=summary,
             description=description,
             version=version,
+            lifespan=lifespan,
+            default_response_class=ORJSONResponse,
         )
 
         self._users = users
@@ -124,12 +153,14 @@ class App:
             return Token(access_token=access_token, token_type="bearer")
 
         @app.get("/books", tags=[_Tags.BOOKS.value])
+        @cache(expire=60)
         async def search_books(query: str) -> Sequence[BookPreview]:
             books = await self._openlibrary.search_books_previews(query)
 
-            return list(map(lambda b: BookPreview.parse(b), books))
+            return list(map(BookPreview.parse, books))
 
         @app.get("/books/{id}", tags=[_Tags.BOOKS.value])
+        @cache(expire=60)
         async def get_book(id: BookID) -> Book:
             book = await self._openlibrary.get_book(id)
 
@@ -151,6 +182,7 @@ class App:
             response_class=Response,
             tags=[_Tags.BOOKS.value],
         )
+        @cache(expire=60)
         async def get_cover(id: CoverID, size: CoverSize = CoverSize.SMALL) -> Response:
             cover = await self._openlibrary.get_cover(
                 id,
@@ -196,19 +228,19 @@ class App:
         ) -> Sequence[Review]:
             reviews = await self._reviews.find_reviews(book_id, user_id)
 
-            return list(map(lambda r: Review.parse(r), reviews))
+            return list(map(Review.parse, reviews))
 
         @app.post("/users", tags=[_Tags.USERS.value])
         async def create_user(login: str, password: str) -> User:
-            try:
-                id = await self._users.create_user(login, password)
-            except UserExistsError:
+            user = await self._users.find_user_by_login(login)
+            if user is not None:
                 # TODO: add this exception into schema
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=f"user {repr(login)} exists",
                 )
 
+            id = await self._users.create_user(login, password)
             user = await self._users.find_user_by_id(id)
 
             if user is None:
@@ -220,7 +252,7 @@ class App:
         async def get_users(login: Optional[str] = None) -> Sequence[User]:
             users = await self._users.find_users(login=login)
 
-            return list(map(lambda u: User.parse(u), users))
+            return list(map(User.parse, users))
 
         @app.get("/users/single", tags=[_Tags.USERS.value])
         async def get_single_user(
@@ -268,7 +300,7 @@ class App:
         ) -> Sequence[Review]:
             reviews = await self._reviews.find_reviews(user_id=user.id)
 
-            return list(map(lambda r: Review.parse(r), reviews))
+            return list(map(Review.parse, reviews))
 
     async def _get_user(self, token: Annotated[str, Depends(_OAUTH2_SCHEME)]) -> User:
         # TODO: add this exception into schema
