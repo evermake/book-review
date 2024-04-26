@@ -73,3 +73,7 @@ def migrations_list() -> None:
 
 def migrations_new() -> None:
     run("yoyo", "new", "--sql")
+
+
+def locust() -> None:
+    run("locust")

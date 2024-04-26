@@ -6,7 +6,7 @@ import aiosqlite
 from pydantic import BaseModel
 
 import book_review.models.user as models
-from book_review.db import ConnectionSupplier, in_memory_connection_supplier
+from book_review.db import ConnectionPool
 
 UserID = models.UserID
 
@@ -57,16 +57,16 @@ class SQLiteRepository(Repository):
     Repository that uses SQLite3 backend.
     """
 
-    _connection_supplier: ConnectionSupplier
+    _pool: ConnectionPool
 
-    def __init__(self, connection_supplier: ConnectionSupplier) -> None:
+    def __init__(self, pool: ConnectionPool) -> None:
         super().__init__()
 
-        self._connection_supplier = connection_supplier
+        self._pool = pool
 
-    @classmethod
-    def in_memory(cls) -> "SQLiteRepository":
-        return cls(in_memory_connection_supplier)
+    # @classmethod
+    # def in_memory(cls) -> "SQLiteRepository":
+    #     return cls(in_memory_connection_supplier)
 
     async def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
         params: dict[str, str] = {}
@@ -81,7 +81,7 @@ class SQLiteRepository(Repository):
 
             query += f" WHERE {' AND '.join(statements)}"
 
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             cursor = await connection.execute(query, params)
             rows = await cursor.fetchall()
 
@@ -105,7 +105,7 @@ class SQLiteRepository(Repository):
             return users
 
     async def find_user_by_id(self, id: UserID) -> Optional[User]:
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             cursor = await connection.execute(
                 "SELECT id, login, password_hash, created_at FROM users WHERE id = ?",
                 (id,),
@@ -114,7 +114,7 @@ class SQLiteRepository(Repository):
             return await self._fetch_user(cursor)
 
     async def find_user_by_login(self, login: str) -> Optional[User]:
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             cursor = await connection.execute(
                 "SELECT id, login, password_hash, created_at FROM users WHERE login = ?",
                 (login,),
@@ -135,7 +135,7 @@ class SQLiteRepository(Repository):
         )
 
     async def create_user(self, login: str, password_hash: str) -> int:
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             try:
                 cursor = await connection.execute(
                     "INSERT INTO users (login, password_hash) VALUES (?, ?) RETURNING id",

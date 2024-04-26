@@ -1,20 +1,12 @@
 from random import randint
 
-from locust import FastHttpUser, between, task
+from locust import FastHttpUser, task
 
 
 class UnauthorizedUser(FastHttpUser):
-    wait_time = between(3, 8)
-
     @task
     def search_books(self):
-        for query in [
-            "Don Quixote",
-            "The Little Prince",
-            "War and Peace",
-            "A Tale of Two Cities",
-        ]:
-            self.client.get("/books", params={"query": query})
+        self.client.get("/books", params={"query": "Don Quixote"})
 
     @task
     def search_users(self):

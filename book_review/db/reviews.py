@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 from pydantic import BaseModel
 
 import book_review.models.reviews as models
-from book_review.db import ConnectionSupplier, in_memory_connection_supplier
+from book_review.db import ConnectionPool
 
 
 class Review(BaseModel):
@@ -67,17 +67,17 @@ class SQLiteRepository(Repository):
     Repository that uses SQLite3 backend.
     """
 
-    _connection_supplier: ConnectionSupplier
+    _pool: ConnectionPool
     _table = "reviews"
 
-    def __init__(self, connection_supplier: ConnectionSupplier) -> None:
+    def __init__(self, pool: ConnectionPool) -> None:
         super().__init__()
 
-        self._connection_supplier = connection_supplier
+        self._pool = pool
 
-    @classmethod
-    def in_memory(cls) -> "SQLiteRepository":
-        return cls(in_memory_connection_supplier)
+    # @classmethod
+    # def in_memory(cls) -> "SQLiteRepository":
+    #     return cls(in_memory_connection_supplier)
 
     async def find_reviews(
         self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
@@ -97,7 +97,7 @@ class SQLiteRepository(Repository):
 
             query += f" WHERE {' AND '.join(statements)}"
 
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             cursor = await connection.execute(query, params)
             rows = await cursor.fetchall()
 
@@ -153,11 +153,11 @@ class SQLiteRepository(Repository):
             updated_at = CURRENT_TIMESTAMP
         """
 
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             connection.execute(query, params)
 
     async def delete_review(self, *, user_id: int, book_id: str) -> None:
-        async with self._connection_supplier() as connection:
+        async with self._pool.resource() as connection:
             connection.execute(
                 f"DELETE FROM {self._table} WHERE user_id = ? AND book_id = ?",
                 (user_id, book_id),

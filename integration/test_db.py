@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import uuid
 from dataclasses import dataclass
 from typing import Generator, Optional
@@ -9,41 +8,44 @@ from pytest_subtests import SubTests
 
 import book_review.db.reviews as db_reviews
 import book_review.db.users as db
-from book_review.db import ConnectionSupplier, apply_migrations
+from book_review.db import ConnectionPool, apply_migrations
 
 
 @pytest.fixture
-def connection_supplier() -> Generator[ConnectionSupplier, None, None]:
+def pool() -> Generator[ConnectionPool, None, None]:
     # can't use :memory: due to yoyo not supporting it
     DB = f"db.test.{uuid.uuid4()}.sqlite3"
 
     apply_migrations(f"sqlite:///{DB}")
 
-    yield lambda: sqlite3.connect(DB)
+    yield ConnectionPool(DB)
 
     os.remove(DB)
 
 
 @pytest.fixture
 def users_repo(
-    connection_supplier: ConnectionSupplier,
+    pool: ConnectionPool,
 ) -> Generator[db.Repository, None, None]:
-    yield db.SQLiteRepository(connection_supplier)
+    yield db.SQLiteRepository(pool)
 
 
 @pytest.fixture
 def reviews_repo(
-    connection_supplier: ConnectionSupplier,
+    pool: ConnectionPool,
 ) -> Generator[db_reviews.Repository, None, None]:
-    yield db_reviews.SQLiteRepository(connection_supplier)
+    yield db_reviews.SQLiteRepository(pool)
 
 
-def test_users_create_and_find(users_repo: db.Repository, subtests: SubTests) -> None:
+@pytest.mark.asyncio
+async def test_users_create_and_find(
+    users_repo: db.Repository, subtests: SubTests
+) -> None:
     logins = [f"login{i}" for i in range(10)]
 
     ids: dict[int, str] = {}
     for login in logins:
-        id = users_repo.create_user(login, "hash")
+        id = await users_repo.create_user(login, "hash")
         ids[id] = login
 
     for id, login in ids.items():
@@ -54,26 +56,28 @@ def test_users_create_and_find(users_repo: db.Repository, subtests: SubTests) ->
             assert user.login == login
 
         with subtests.test("find by id", id=id):
-            user = users_repo.find_user_by_id(id)
+            user = await users_repo.find_user_by_id(id)
             check_user(user)
 
         with subtests.test("find by login", login=login):
-            user = users_repo.find_user_by_login(login)
+            user = await users_repo.find_user_by_login(login)
             check_user(user)
 
 
-def test_users_not_found(users_repo: db.Repository) -> None:
-    user = users_repo.find_user_by_id(42)
+@pytest.mark.asyncio
+async def test_users_not_found(users_repo: db.Repository) -> None:
+    user = await users_repo.find_user_by_id(42)
     assert user is None
 
 
-def test_reviews_create_and_find(
+@pytest.mark.asyncio
+async def test_reviews_create_and_find(
     users_repo: db.Repository,
     reviews_repo: db_reviews.Repository,
     subtests: SubTests,
 ) -> None:
-    user_1 = users_repo.create_user("Celine_Ratke41", "/1D^C(NHXO")
-    user_2 = users_repo.create_user("Brain_Littel27", "zR|u`VCy]6")
+    user_1 = await users_repo.create_user("Celine_Ratke41", "/1D^C(NHXO")
+    user_2 = await users_repo.create_user("Brain_Littel27", "zR|u`VCy]6")
 
     @dataclass
     class MockReview:
@@ -104,7 +108,7 @@ def test_reviews_create_and_find(
     ]
 
     for p in mock_reviews:
-        reviews_repo.create_or_update_review(
+        await reviews_repo.create_or_update_review(
             user_id=p.user_id,
             book_id=p.book_id,
             rating=p.rating,
@@ -112,7 +116,7 @@ def test_reviews_create_and_find(
         )
 
     with subtests.test("find all reviews"):
-        reviews = reviews_repo.find_reviews()
+        reviews = await reviews_repo.find_reviews()
 
         expected_pairs = map(lambda p: (p.user_id, p.book_id), mock_reviews)
         actual_pairs = map(lambda r: (r.user_id, r.book_id), reviews)
@@ -121,7 +125,7 @@ def test_reviews_create_and_find(
 
     for user_id in [user_1, user_2]:
         with subtests.test("find by user id", user_id=user_id):
-            reviews = reviews_repo.find_reviews(user_id=user_id)
+            reviews = await reviews_repo.find_reviews(user_id=user_id)
 
             expected_pairs = map(
                 lambda p: (p.user_id, p.book_id),
@@ -134,7 +138,7 @@ def test_reviews_create_and_find(
 
     for book_id in map(lambda r: r.book_id, mock_reviews):
         with subtests.test("find by book_id", book_id=book_id):
-            reviews = reviews_repo.find_reviews(book_id=book_id)
+            reviews = await reviews_repo.find_reviews(book_id=book_id)
 
             expected_pairs = map(
                 lambda p: (p.user_id, p.book_id),
@@ -146,7 +150,10 @@ def test_reviews_create_and_find(
             assert all(p in actual_pairs for p in expected_pairs)
 
 
-def test_reviews_not_found(reviews_repo: db_reviews.Repository) -> None:
-    reviews = reviews_repo.find_reviews(book_id="d6c95b45-921b-4aa0-aad2-ea267bfdd036")
+@pytest.mark.asyncio
+async def test_reviews_not_found(reviews_repo: db_reviews.Repository) -> None:
+    reviews = await reviews_repo.find_reviews(
+        book_id="d6c95b45-921b-4aa0-aad2-ea267bfdd036"
+    )
 
     assert len(reviews) == 0

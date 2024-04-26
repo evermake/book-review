@@ -40,6 +40,7 @@ lint = "tools:lint"
 typecheck = "tools:typecheck"
 check = "tools:check"
 security = "tools:security"
+locust = "tools:locust"
 
 migrations-apply = "tools:migrations_apply"
 migrations-rollback = "tools:migrations_rollback"
