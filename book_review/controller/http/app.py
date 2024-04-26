@@ -153,14 +153,14 @@ class App:
             return Token(access_token=access_token, token_type="bearer")
 
         @app.get("/books", tags=[_Tags.BOOKS.value])
-        @cache(expire=60)
+        @cache(expire=60 * 60 * 24)
         async def search_books(query: str) -> Sequence[BookPreview]:
             books = await self._openlibrary.search_books_previews(query)
 
             return list(map(BookPreview.parse, books))
 
         @app.get("/books/{id}", tags=[_Tags.BOOKS.value])
-        @cache(expire=60)
+        @cache(expire=60 * 60 * 24)
         async def get_book(id: BookID) -> Book:
             book = await self._openlibrary.get_book(id)
 
@@ -182,7 +182,7 @@ class App:
             response_class=Response,
             tags=[_Tags.BOOKS.value],
         )
-        @cache(expire=60)
+        @cache(expire=60 * 60 * 24)
         async def get_cover(id: CoverID, size: CoverSize = CoverSize.SMALL) -> Response:
             cover = await self._openlibrary.get_cover(
                 id,
@@ -222,6 +222,7 @@ class App:
         @app.get(
             "/reviews", tags=[_Tags.BOOKS.value, _Tags.REVIEWS.value, _Tags.USERS.value]
         )
+        @cache(5)
         async def find_reviews(
             book_id: Optional[BookID] = None,
             user_id: Optional[UserID] = None,
@@ -249,12 +250,14 @@ class App:
             return User(id=user.id, login=user.login, created_at=user.created_at)
 
         @app.get("/users", tags=[_Tags.USERS.value])
+        @cache(20)
         async def get_users(login: Optional[str] = None) -> Sequence[User]:
             users = await self._users.find_users(login=login)
 
             return list(map(User.parse, users))
 
         @app.get("/users/single", tags=[_Tags.USERS.value])
+        @cache(20)
         async def get_single_user(
             id: Optional[UserID] = None, login: Optional[str] = None
         ) -> User:
@@ -289,12 +292,14 @@ class App:
             )
 
         @app.get("/users/me", tags=[_Tags.USERS.value])
+        @cache(5)
         async def get_current_user(
             user: Annotated[User, Depends(self._get_user)],
         ) -> User:
             return user
 
         @app.get("/users/me/reviews", tags=[_Tags.USERS.value, _Tags.REVIEWS.value])
+        @cache(5)
         async def get_current_user_reviews(
             user: Annotated[User, Depends(self._get_user)],
         ) -> Sequence[Review]:

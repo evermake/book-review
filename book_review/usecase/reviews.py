@@ -1,6 +1,6 @@
 from typing import Optional, Sequence
 
-from book_review.db.reviews import Repository
+from book_review.dao.reviews import Repository
 from book_review.models.book import BookID
 from book_review.models.reviews import Review
 from book_review.models.user import UserID

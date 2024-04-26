@@ -1,37 +1,19 @@
-import os.path
 from typing import Any
 
 import orjson
-import rich.traceback
+import sqlalchemy.ext.asyncio as sqlalchemy
 from aiohttp import ClientSession
 from yarl import URL
 
 import book_review.db as db
 from book_review.config import settings
 from book_review.controller.http.app import App as HTTPApp
-from book_review.db.reviews import SQLiteRepository as ReviewsRepository
-from book_review.db.users import SQLiteRepository as UsersRepository
+from book_review.dao.reviews import ORMRepository as ReviewsRepository
+from book_review.dao.users import ORMRepository as UsersRepository
 from book_review.openlibrary.client import HTTPAPIClient as OpenlibraryClient
 from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
 from book_review.usecase.users import UseCase as UsersUseCase
-
-
-def _apply_migrations() -> None:
-    if not os.path.exists(settings.DB):
-        open(settings.DB, "a").close()
-
-    if os.path.isabs(settings.DB):
-        db.apply_migrations(f"sqlite:///{settings.DB}")
-        return
-
-    abs = os.path.abspath(settings.DB)
-
-    db.apply_migrations(f"sqlite:///{abs}")
-
-
-def _get_db_connection_pool() -> db.ConnectionPool:
-    return db.ConnectionPool(settings.DB, max_connections=500)
 
 
 def _get_client_session(base_url: URL) -> ClientSession:
@@ -41,22 +23,36 @@ def _get_client_session(base_url: URL) -> ClientSession:
     return ClientSession(base_url, json_serialize=encoder)
 
 
+def _create_engine() -> sqlalchemy.AsyncEngine:
+    return sqlalchemy.create_async_engine(
+        f"sqlite+aiosqlite:///{settings.DB}", echo=settings.DEBUG
+    )
+
+
+def _get_session_maker(
+    engine: sqlalchemy.AsyncEngine,
+) -> sqlalchemy.async_sessionmaker[sqlalchemy.AsyncSession]:
+    return sqlalchemy.async_sessionmaker(engine)
+
+
 class App:
-    def setup(self) -> None:
-        """
-        Setup the application.
-        """
+    _engine: sqlalchemy.AsyncEngine
 
-        rich.traceback.install(show_locals=settings.DEBUG)
+    # TODO: improve setup
+    async def _setup(self) -> None:
+        self._engine = _create_engine()
 
-        _apply_migrations()
+        await self._setup_db()
+
+    async def _setup_db(self) -> None:
+        await db.create_all(self._engine)
 
     async def _serve_http_app(self) -> None:
-        pool = _get_db_connection_pool()
+        session_maker = _get_session_maker(self._engine)
 
         http_app = HTTPApp(
-            users=UsersUseCase(UsersRepository(pool)),
-            reviews=ReviewsUseCase(ReviewsRepository(pool)),
+            users=UsersUseCase(UsersRepository(session_maker)),
+            reviews=ReviewsUseCase(ReviewsRepository(session_maker)),
             openlibrary=OpenlibraryUseCase(
                 OpenlibraryClient(
                     api_session=_get_client_session(URL(settings.OPENLIBRARY_BASE_URL)),
@@ -75,4 +71,5 @@ class App:
         Make sure that the setup was called before running this method.
         """
 
+        await self._setup()
         await self._serve_http_app()

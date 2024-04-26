@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
-from book_review.db.users import Repository
+from book_review.dao.users import Repository
 from book_review.models.user import User, UserID
 
 

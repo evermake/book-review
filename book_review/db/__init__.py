@@ -1,134 +1,44 @@
-import asyncio
-from abc import ABC, abstractmethod
-from collections import deque
-from collections.abc import AsyncGenerator, Hashable
-from contextlib import asynccontextmanager
-from typing import Deque, Generic, TypeVar
+from datetime import datetime
+from typing import Optional
 
-import aiosqlite
-import yoyo
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.sql import func
 
-
-def in_memory_connection_supplier() -> aiosqlite.Connection:
-    return aiosqlite.connect(":memory:")
+from book_review.models.book import BookID
+from book_review.models.user import UserID
 
 
-def apply_migrations(db: str) -> None:
-    backend = yoyo.get_backend(db)
-    migrations = yoyo.read_migrations("book_review/migrations/")
-
-    with backend.lock():
-        backend.apply_migrations(backend.to_apply(migrations))
+async def create_all(engine: AsyncEngine) -> None:
+    async with engine.begin() as connection:
+        await connection.run_sync(TableUsers.metadata.create_all)
+        await connection.run_sync(TableReviews.metadata.create_all)
 
 
-T = TypeVar("T", bound=Hashable)
+class Base(DeclarativeBase):
+    pass
 
 
-class ResourcePool(ABC, Generic[T]):
-    _max_resources: int
-    _request_lock: asyncio.Lock
-    _resource_returned: asyncio.Condition
-    _pool: Deque[T]
-    _n_resources_created: int
-    _in_use: set[T]
+class TableUsers(Base):
+    __tablename__ = "users"
 
-    def __init__(self, max_resources: int):
-        if max_resources < 1:
-            raise ValueError(f"Invalid max_resources argument: {max_resources}")
-
-        self._max_resources = max_resources
-        self._request_lock = asyncio.Lock()
-        self._resource_returned = asyncio.Condition()
-        self._pool = deque()
-        self._n_resources_created = 0
-        self._in_use = set()
-
-    async def close(self) -> None:
-        """Close all resources."""
-
-        async with self._request_lock:
-            while self._pool:
-                res = self._pool.popleft()
-
-                await self.close_resource(res)
-
-            while self._in_use:
-                res = self._in_use.pop()
-
-                await self.close_resource(res)
-
-    @abstractmethod
-    async def close_resource(self, res: T) -> None:
-        pass
-
-    @abstractmethod
-    async def create_resource(self) -> T:
-        pass
-
-    async def get_resource(self, timeout: int = 10) -> T:
-        while True:
-            async with self._request_lock:
-                if self._pool:
-                    res = self._pool.popleft()
-                    self._in_use.add(res)
-
-                    return res
-
-                # Can we create another resource?
-                if self._n_resources_created < self._max_resources:
-                    self._n_resources_created += 1
-                    res = await self.create_resource()
-                    self._in_use.add(res)
-
-                    return res
-
-                # We must wait for a resource to be returned
-                async def wait_for_resource() -> None:
-                    async with self._resource_returned:
-                        await self._resource_returned.wait()
-
-                try:
-                    await asyncio.wait_for(wait_for_resource(), timeout=timeout)
-                    # The pool now has at least one resource available and
-                    # we will succeed on next iteration.
-                except asyncio.TimeoutError:
-                    raise RuntimeError("Timeout: No available resource in the pool.")
-
-    async def release_resource(self, res: T) -> None:
-        if res not in self._in_use:
-            raise Exception("Releasing unknown object")
-        # Could raise exception if two threads are releasing the same resource:
-        self._in_use.remove(res)
-        self._pool.append(res)
-
-        # If someone is waiting for a resource:
-        async with self._resource_returned:
-            self._resource_returned.notify()
-
-    @asynccontextmanager
-    async def resource(self, timeout: int = 10) -> AsyncGenerator[T, None]:
-        res = await self.get_resource(timeout)
-
-        try:
-            yield res
-        finally:
-            await self.release_resource(res)
+    id: Mapped[UserID] = mapped_column(primary_key=True, index=True)
+    login: Mapped[str] = mapped_column(String(30), unique=True)
+    password_hash: Mapped[str] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
 
 
-class ConnectionPool(ResourcePool[aiosqlite.Connection]):
-    _database: str
+class TableReviews(Base):
+    __tablename__ = "reviews"
 
-    def __init__(self, database: str, *, max_connections: int = 10) -> None:
-        super().__init__(max_connections)
-        self._database = database
+    user_id: Mapped[UserID] = mapped_column(
+        ForeignKey(f"{TableUsers.__tablename__}.id"), primary_key=True
+    )
+    book_id: Mapped[BookID] = mapped_column(String(), primary_key=True)
 
-    async def create_resource(self) -> aiosqlite.Connection:
-        return await aiosqlite.connect(self._database, loop=asyncio.get_running_loop())
+    rating: Mapped[int] = mapped_column(CheckConstraint("rating between 1 and 10"))
+    commentary: Mapped[Optional[str]] = mapped_column()
 
-    async def release_resource(self, res: aiosqlite.Connection) -> None:
-        await res.rollback()
-
-        await super().release_resource(res)
-
-    async def close_resource(self, res: aiosqlite.Connection) -> None:
-        await res.close()
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column()
