@@ -3,22 +3,22 @@ from typing import Optional, Sequence
 
 import pytest
 
-import book_review.db.users as db
+import book_review.dao.users as dao
 import book_review.usecase.users as usecase
 
 
 @pytest.mark.asyncio
 async def test_verify_password() -> None:
-    class MockRepo(db.Repository):
+    class MockRepo(dao.Repository):
         async def find_users(
             self, *, login_like: Optional[str] = None
-        ) -> Sequence[db.User]:
+        ) -> Sequence[dao.User]:
             raise Exception()
 
-        async def find_user_by_id(self, id: db.UserID) -> Optional[db.User]:
+        async def find_user_by_id(self, id: dao.UserID) -> Optional[dao.User]:
             raise Exception()
 
-        async def find_user_by_login(self, login: str) -> Optional[db.User]:
+        async def find_user_by_login(self, login: str) -> Optional[dao.User]:
             raise Exception()
 
         async def create_user(self, login: str, password_hash: str) -> int:
@@ -43,16 +43,16 @@ async def test_create_user() -> None:
     expected_login = "login"
     expected_id = 42
 
-    class MockRepo(db.Repository):
+    class MockRepo(dao.Repository):
         async def find_users(
             self, *, login_like: Optional[str] = None
-        ) -> Sequence[db.User]:
+        ) -> Sequence[dao.User]:
             raise Exception()
 
-        async def find_user_by_id(self, id: int) -> Optional[db.User]:
+        async def find_user_by_id(self, id: int) -> Optional[dao.User]:
             raise Exception()
 
-        async def find_user_by_login(self, login: str) -> Optional[db.User]:
+        async def find_user_by_login(self, login: str) -> Optional[dao.User]:
             raise Exception()
 
         async def create_user(self, login: str, password_hash: str) -> int:
@@ -70,25 +70,25 @@ async def test_create_user() -> None:
 @pytest.mark.asyncio
 async def test_find_user_by_id() -> None:
     expected_id = 42
-    expected_user = db.User(
+    expected_user = dao.User(
         id=expected_id,
         login="login",
         password_hash="hash",
         created_at=sqlite3.Timestamp(1999, 4, 1),
     )
 
-    class MockRepo(db.Repository):
+    class MockRepo(dao.Repository):
         async def find_users(
             self, *, login_like: Optional[str] = None
-        ) -> Sequence[db.User]:
+        ) -> Sequence[dao.User]:
             raise Exception()
 
-        async def find_user_by_id(self, id: int) -> Optional[db.User]:
+        async def find_user_by_id(self, id: int) -> Optional[dao.User]:
             assert id == expected_id
 
             return expected_user
 
-        async def find_user_by_login(self, login: str) -> Optional[db.User]:
+        async def find_user_by_login(self, login: str) -> Optional[dao.User]:
             raise Exception()
 
         async def create_user(self, login: str, password_hash: str) -> int:
@@ -105,23 +105,23 @@ async def test_find_user_by_id() -> None:
 @pytest.mark.asyncio
 async def test_find_user_by_login() -> None:
     expected_login = "login"
-    expected_user = db.User(
+    expected_user = dao.User(
         id=42,
         login=expected_login,
         password_hash="hash",
         created_at=sqlite3.Timestamp(1999, 4, 1),
     )
 
-    class MockRepo(db.Repository):
+    class MockRepo(dao.Repository):
         async def find_users(
             self, *, login_like: Optional[str] = None
-        ) -> Sequence[db.User]:
+        ) -> Sequence[dao.User]:
             raise Exception()
 
-        async def find_user_by_id(self, id: int) -> Optional[db.User]:
+        async def find_user_by_id(self, id: int) -> Optional[dao.User]:
             raise Exception()
 
-        async def find_user_by_login(self, login: str) -> Optional[db.User]:
+        async def find_user_by_login(self, login: str) -> Optional[dao.User]:
             assert login == expected_login
 
             return expected_user

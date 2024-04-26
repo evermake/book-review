@@ -22,11 +22,10 @@ locust = "^2.26.0"
 aiosqlite = "^0.20.0"
 fastapi-cache2 = { extras = ["memcache"], version = "^0.2.1" }
 orjson = "^3.10.1"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.29"}
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.29" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.3.7"
-setuptools = "^69.5.1"
 mypy = "^1.9.0"
 pytest = "^8.1.1"
 pytest-subtests = "^0.12.1"
@@ -58,7 +57,6 @@ skips = ["B101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration"]
-filterwarnings = ["ignore::DeprecationWarning:yoyo.*:"]
 
 [tool.locust]
 locustfile = "locust/locust.py"

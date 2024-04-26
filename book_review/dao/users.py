@@ -60,7 +60,7 @@ class Repository(ABC):
 class ORMRepository(Repository):
     _session: async_sessionmaker[AsyncSession]
 
-    def __init__(self, session_maker: async_sessionmaker) -> None:
+    def __init__(self, session_maker: async_sessionmaker[AsyncSession]) -> None:
         super().__init__()
 
         self._session = session_maker

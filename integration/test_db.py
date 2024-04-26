@@ -1,5 +1,3 @@
-import os
-import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from typing import Optional
@@ -7,44 +5,43 @@ from typing import Optional
 import pytest
 import pytest_asyncio
 from pytest_subtests import SubTests
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-import book_review.db.reviews as db_reviews
-import book_review.db.users as db
-from book_review.db import ConnectionPool, apply_migrations
+import book_review.dao.reviews as dao_reviews
+import book_review.dao.users as dao_users
+from book_review.db import create_all
+
+engine = create_async_engine("sqlite+aiosqlite://")
 
 
 @pytest_asyncio.fixture
-async def pool() -> AsyncGenerator[ConnectionPool, None]:
+async def session_maker() -> AsyncGenerator[async_sessionmaker[AsyncSession], None]:
     # can't use :memory: due to yoyo not supporting it
-    DB = f"db.test.{uuid.uuid4()}.sqlite3"
 
-    apply_migrations(f"sqlite:///{DB}")
+    await create_all(engine)
 
-    pool = ConnectionPool(DB, max_connections=10)
+    session_maker = async_sessionmaker(engine)
 
-    yield pool
-
-    await pool.close()
-    os.remove(DB)
+    yield session_maker
 
 
 @pytest_asyncio.fixture
 async def users_repo(
-    pool: ConnectionPool,
-) -> AsyncGenerator[db.Repository, None]:
-    yield db.SQLiteRepository(pool)
+    session_maker: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[dao_users.Repository, None]:
+    yield dao_users.ORMRepository(session_maker)
 
 
 @pytest_asyncio.fixture
 async def reviews_repo(
-    pool: ConnectionPool,
-) -> AsyncGenerator[db_reviews.Repository, None]:
-    yield db_reviews.SQLiteRepository(pool)
+    session_maker: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[dao_reviews.Repository, None]:
+    yield dao_reviews.ORMRepository(session_maker)
 
 
 @pytest.mark.asyncio
 async def test_users_create_and_find(
-    users_repo: db.Repository, subtests: SubTests
+    users_repo: dao_users.Repository, subtests: SubTests
 ) -> None:
     logins = [f"login{i}" for i in range(10)]
 
@@ -55,7 +52,7 @@ async def test_users_create_and_find(
 
     for id, login in ids.items():
 
-        def check_user(user: Optional[db.User]) -> None:
+        def check_user(user: Optional[dao_users.User]) -> None:
             assert user is not None
             assert user.id == id
             assert user.login == login
@@ -70,15 +67,15 @@ async def test_users_create_and_find(
 
 
 @pytest.mark.asyncio
-async def test_users_not_found(users_repo: db.Repository) -> None:
+async def test_users_not_found(users_repo: dao_users.Repository) -> None:
     user = await users_repo.find_user_by_id(42)
     assert user is None
 
 
 @pytest.mark.asyncio
 async def test_reviews_create_and_find(
-    users_repo: db.Repository,
-    reviews_repo: db_reviews.Repository,
+    users_repo: dao_users.Repository,
+    reviews_repo: dao_reviews.Repository,
     subtests: SubTests,
 ) -> None:
     user_1 = await users_repo.create_user("Celine_Ratke41", "/1D^C(NHXO")
@@ -158,7 +155,7 @@ async def test_reviews_create_and_find(
 
 
 @pytest.mark.asyncio
-async def test_reviews_not_found(reviews_repo: db_reviews.Repository) -> None:
+async def test_reviews_not_found(reviews_repo: dao_reviews.Repository) -> None:
     reviews = await reviews_repo.find_reviews(
         book_id="d6c95b45-921b-4aa0-aad2-ea267bfdd036"
     )

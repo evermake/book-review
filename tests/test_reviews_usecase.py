@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 import pytest
 
-import book_review.db.reviews as db
+import book_review.dao.reviews as dao
 import book_review.usecase.reviews as usecase
 
 
@@ -15,7 +15,7 @@ async def test_create_review() -> None:
     expected_rating = 8
     expected_commentary = "Laboriosam reprehenderit dolores porro vitae."
 
-    class MockRepo(db.Repository):
+    class MockRepo(dao.Repository):
         async def delete_review(self, *, user_id: int, book_id: str) -> None:
             raise Exception()
 
@@ -34,7 +34,7 @@ async def test_create_review() -> None:
 
         async def find_reviews(
             self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
-        ) -> Sequence[db.Review]:
+        ) -> Sequence[dao.Review]:
             raise Exception()
 
         async def close(self) -> None:
@@ -52,10 +52,10 @@ async def test_find_reviews() -> None:
     expected_book_id = "d8feda9d-82f6-4f05-821c-70daa6b627af"
     expected_user_id = 42
 
-    expected_reviews: list[db.Review] = []
+    expected_reviews: list[dao.Review] = []
 
     for _ in range(10):
-        review = db.Review(
+        review = dao.Review(
             user_id=expected_user_id,
             book_id=expected_book_id,
             rating=random.randint(1, 10),
@@ -64,7 +64,7 @@ async def test_find_reviews() -> None:
 
         expected_reviews.append(review)
 
-    class MockRepo(db.Repository):
+    class MockRepo(dao.Repository):
         async def delete_review(self, *, user_id: int, book_id: str) -> None:
             raise Exception()
 
@@ -80,7 +80,7 @@ async def test_find_reviews() -> None:
 
         async def find_reviews(
             self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
-        ) -> Sequence[db.Review]:
+        ) -> Sequence[dao.Review]:
             assert book_id == expected_book_id
             assert user_id == expected_user_id
 
