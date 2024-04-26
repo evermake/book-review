@@ -1,4 +1,4 @@
-from dynaconf import Dynaconf
+from dynaconf import Dynaconf, Validator
 from pydantic import BaseModel, ConfigDict
 
 
@@ -38,5 +38,6 @@ settings = Schema(
     **Dynaconf(
         envvar_prefix="BOOK_REVIEW",
         settings_files=["settings.toml", ".secrets.toml"],
+        validators=[Validator("SECRET_KEY", must_exist=True)],
     ).as_dict()
 )

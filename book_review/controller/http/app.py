@@ -3,15 +3,12 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Annotated, Any, AsyncGenerator, Optional, Sequence
 
-import orjson
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
-from fastapi_cache.coder import Coder
 from fastapi_cache.decorator import cache
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -22,6 +19,7 @@ from book_review.usecase.openlibrary import UseCase as OpenlibraryUseCase
 from book_review.usecase.reviews import UseCase as ReviewsUseCase
 from book_review.usecase.users import UseCase as UsersUseCase
 
+from .coder import ORJSONCoder
 from .models import (
     Book,
     BookID,
@@ -50,20 +48,6 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     login: str
-
-
-class ORJSONCoder(Coder):
-    @classmethod
-    def encode(cls, value: Any) -> str:
-        return orjson.dumps(
-            value,
-            default=jsonable_encoder,
-            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
-        ).decode()
-
-    @classmethod
-    def decode(cls, value: str) -> Any:
-        return orjson.loads(value)
 
 
 class App:
@@ -250,14 +234,14 @@ class App:
             return User(id=user.id, login=user.login, created_at=user.created_at)
 
         @app.get("/users", tags=[_Tags.USERS.value])
-        @cache(20)
+        @cache(5)
         async def get_users(login: Optional[str] = None) -> Sequence[User]:
             users = await self._users.find_users(login=login)
 
             return list(map(User.parse, users))
 
         @app.get("/users/single", tags=[_Tags.USERS.value])
-        @cache(20)
+        @cache(5)
         async def get_single_user(
             id: Optional[UserID] = None, login: Optional[str] = None
         ) -> User:

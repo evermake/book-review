@@ -1,4 +1,5 @@
 from random import randint
+from uuid import uuid4
 
 from locust import FastHttpUser, task
 
@@ -26,7 +27,7 @@ class UnauthorizedUser(FastHttpUser):
     def create_review(self) -> None:
         with self.client.post(
             "/reviews",
-            data={"rating": randint(1, 10), "book_id": "bla bla"},
+            data={"rating": randint(1, 10), "book_id": str(uuid4())},
             catch_response=True,
         ) as response:
             if response.status_code == 401:

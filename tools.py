@@ -57,7 +57,3 @@ def check() -> None:
 def format() -> None:
     run("ruff", "check", "--fix")
     run("ruff", "format")
-
-
-def locust() -> None:
-    run("locust")
