@@ -1,4 +1,6 @@
-from dynaconf import Dynaconf, Validator
+import secrets
+
+from dynaconf import Dynaconf
 from pydantic import BaseModel, ConfigDict
 
 
@@ -16,7 +18,7 @@ class Schema(BaseModel):
 
     # Secret key used for JWT authorization
     # Generate one with "openssl rand -hex 32"
-    SECRET_KEY: str
+    SECRET_KEY: str = secrets.token_hex(32)
 
     # Algorithm for JWT
     ALGORITHM: str = "HS256"
@@ -38,6 +40,5 @@ settings = Schema(
     **Dynaconf(
         envvar_prefix="BOOK_REVIEW",
         settings_files=["settings.toml", ".secrets.toml"],
-        validators=[Validator("SECRET_KEY", must_exist=True)],
     ).as_dict()
 )
