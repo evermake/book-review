@@ -14,6 +14,9 @@ class Schema(BaseModel):
     # Whether to enable debug mode
     DEBUG: bool = False
 
+    # List of allowed CORS origins
+    CORS_ALLOWED_ORIGINS: list[str] = ["*"]
+
     # Secret key used for JWT authorization
     # Generate one with "openssl rand -hex 32"
     SECRET_KEY: str

@@ -5,6 +5,7 @@ from typing import Annotated, Any, AsyncGenerator, Optional, Sequence
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_cache import FastAPICache
@@ -87,6 +88,13 @@ class App:
             version=version,
             lifespan=lifespan,
             default_response_class=ORJSONResponse,
+        )
+        self._app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.CORS_ALLOWED_ORIGINS,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
         )
 
         self._users = users
