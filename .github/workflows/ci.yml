@@ -34,6 +34,9 @@ jobs:
         run: |
           poetry install
 
+      - name: generate secret key
+        run: printf 'secret_key = "%s"\n' "$(openssl rand -hex 32)" > .secrets.toml
+
       - name: run checks
         run: poetry run check
 
