@@ -10,7 +10,7 @@ def run(command: str, *args: str) -> None:
     print(f"+ {' '.join(_args)}")
 
     try:
-        _run(_args, cwd=CWD)
+        _run(_args, cwd=CWD).check_returncode()
     except KeyboardInterrupt:
         exit(0)
 
