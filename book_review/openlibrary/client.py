@@ -138,7 +138,9 @@ class Client(ABC):
     @abstractmethod
     async def search_books(self, filter: SearchBooksFilter) -> Sequence[BookPreview]:
         """
-        Search books with the given filter
+        Search books previews with the given filter.
+        Book preview does not hold all available information for the sake of performance.
+        Use `get_book` to get more information for a specific book.
         """
         pass
 
@@ -182,6 +184,10 @@ class HTTPAPIClient(Client):
 
     @staticmethod
     def _build_search_books_filters_params(filter: SearchBooksFilter) -> QueryParams:
+        """
+        Build API query parameters from the given filter.
+        """
+
         params: QueryParams = []
 
         if filter.query is not None:

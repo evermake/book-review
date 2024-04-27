@@ -24,6 +24,10 @@ class User(BaseModel):
 
     @classmethod
     def parse_scalar(cls, scalar: TableUsers) -> "User":
+        """
+        Create a new user from the given scalar
+        """
+
         return cls(
             id=scalar.id,
             login=scalar.login,
@@ -32,10 +36,18 @@ class User(BaseModel):
         )
 
     def map(self) -> models.User:
+        """
+        Map this user into primary user model
+        """
+
         return models.User(id=self.id, login=self.login, created_at=self.created_at)
 
 
 class Repository(ABC):
+    """
+    Users repository.
+    """
+
     @abstractmethod
     async def find_users(self, *, login_like: Optional[str] = None) -> Sequence[User]:
         """
@@ -46,18 +58,34 @@ class Repository(ABC):
 
     @abstractmethod
     async def find_user_by_id(self, id: UserID) -> Optional[User]:
+        """
+        Find a single user by its id.
+        If the the user with such id was not found None is returned.
+        """
         pass
 
     @abstractmethod
     async def find_user_by_login(self, login: str) -> Optional[User]:
+        """
+        Find a single user by its login.
+        If the the user with such login was not found None is returned.
+        """
         pass
 
     @abstractmethod
     async def create_user(self, login: str, password_hash: str) -> int:
+        """
+        Create a new user.
+        Note, that exception will be thrown if the user exists already.
+        """
         pass
 
 
 class ORMRepository(Repository):
+    """
+    Users respository implementation that uses sqlalchemy ORM
+    """
+
     _session: async_sessionmaker[AsyncSession]
 
     def __init__(self, session_maker: async_sessionmaker[AsyncSession]) -> None:
@@ -82,6 +110,11 @@ class ORMRepository(Repository):
             return list(map(User.parse_scalar, users))
 
     async def find_user_by_id(self, id: UserID) -> Optional[User]:
+        """
+        Find a single user by its id.
+        If the the user with such id was not found None is returned.
+        """
+
         statement = select(TableUsers).where(TableUsers.id == id)
 
         async with self._session() as session:
@@ -93,6 +126,11 @@ class ORMRepository(Repository):
             return User.parse_scalar(user)
 
     async def find_user_by_login(self, login: str) -> Optional[User]:
+        """
+        Find a single user by its login.
+        If the the user with such login was not found None is returned.
+        """
+
         statement = select(TableUsers).where(TableUsers.login == login)
 
         async with self._session() as session:
@@ -104,6 +142,11 @@ class ORMRepository(Repository):
             return User.parse_scalar(user)
 
     async def create_user(self, login: str, password_hash: str) -> int:
+        """
+        Create a new user.
+        Note, that exception will be thrown if the user exists already.
+        """
+
         statement = (
             insert(TableUsers)
             .values(login=login, password_hash=password_hash)

@@ -36,6 +36,10 @@ _OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class _Tags(str, Enum):
+    """
+    Tags that are used for OpenAPI schema documentation.
+    """
+
     REVIEWS = "reviews"
     BOOKS = "books"
     USERS = "users"
@@ -49,6 +53,29 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     login: str
+
+
+def _create_access_token(
+    data: dict[str, Any], expires_delta: Optional[timedelta] = None
+) -> str:
+    """
+    Create a new JWT token
+    """
+
+    if expires_delta is None:
+        expires_delta = timedelta(minutes=15)
+
+    to_encode = data.copy()
+
+    expires_at = datetime.now(timezone.utc) + expires_delta
+
+    to_encode.update({"exp": expires_at})
+
+    encoded_jwt: str = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
+
+    return encoded_jwt
 
 
 class App:
@@ -102,6 +129,10 @@ class App:
         self._openlibrary = openlibrary
 
     async def serve(self) -> None:
+        """
+        Run the server
+        """
+
         self._register_routes()
 
         log_level = "debug" if settings.DEBUG else "info"
@@ -112,6 +143,13 @@ class App:
         await server.serve()
 
     def _register_routes(self) -> None:
+        """
+        Register FastAPI routes.
+        """
+
+        # NOTE: this is a bit ugly but FastAPI does not provide a way to add
+        # routes programmatically (without decorators) without losing all the benefits
+
         app = self._app
 
         @app.get("/health", tags=[_Tags.HEALTHCHECK.value])
@@ -138,7 +176,7 @@ class App:
                 minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
 
-            access_token = self._create_access_token(
+            access_token = _create_access_token(
                 data={"sub": user.login}, expires_delta=access_token_expires
             )
 
@@ -327,21 +365,3 @@ class App:
             raise credentials_exception
 
         return User.parse(user)
-
-    def _create_access_token(
-        self, data: dict[str, Any], expires_delta: Optional[timedelta] = None
-    ) -> str:
-        if expires_delta is None:
-            expires_delta = timedelta(minutes=15)
-
-        to_encode = data.copy()
-
-        expires_at = datetime.now(timezone.utc) + expires_delta
-
-        to_encode.update({"exp": expires_at})
-
-        encoded_jwt: str = jwt.encode(
-            to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
-        )
-
-        return encoded_jwt
