@@ -1,23 +1,24 @@
-import pytest
 from unittest.mock import AsyncMock
-from typing import Sequence, Optional
-from book_review.models.book import BookPreview, Book, BookID
+
+import pytest
+
+from book_review.models.book import Book, BookID, BookPreview
 from book_review.openlibrary.client import Client, CoverSize
 from book_review.usecase.openlibrary import UseCase  # Import your UseCase class
 
 
 @pytest.fixture
-def mock_client():
+def mock_client() -> AsyncMock:
     return AsyncMock(spec=Client)
 
 
 @pytest.fixture
-def use_case(mock_client):
+def use_case(mock_client: AsyncMock) -> UseCase:
     return UseCase(mock_client)
 
 
 @pytest.mark.asyncio
-async def test_search_books_previews(use_case, mock_client):
+async def test_search_books_previews(use_case: UseCase, mock_client: AsyncMock) -> None:
     # Arrange
     mock_client.search_books.return_value = [
         AsyncMock(map=lambda: BookPreview(id="123", title="Title1")),
@@ -37,19 +38,25 @@ async def test_search_books_previews(use_case, mock_client):
 
 
 @pytest.mark.asyncio
-async def test_get_book(use_case, mock_client):
+async def test_get_book(use_case: UseCase, mock_client: AsyncMock) -> None:
     # Arrange
-    mock_client.get_book.return_value = AsyncMock(map=lambda: Book(id="123", title="Title", description="Description"))
+    mock_client.get_book.return_value = AsyncMock(
+        map=lambda: Book(id="123", title="Title", description="Description")
+    )
 
     # Act
     result = await use_case.get_book(BookID("123"))
 
+    if result is not None:
+        assert result.title == "Title"
+        assert result.description == "Description"
+
     # Assert
-    assert result.title == "Title"
+    assert result is not None
 
 
 @pytest.mark.asyncio
-async def test_get_book_not_found(use_case, mock_client):
+async def test_get_book_not_found(use_case: UseCase, mock_client: AsyncMock) -> None:
     # Arrange
     mock_client.get_book.return_value = None
 
@@ -61,7 +68,7 @@ async def test_get_book_not_found(use_case, mock_client):
 
 
 @pytest.mark.asyncio
-async def test_get_cover(use_case, mock_client):
+async def test_get_cover(use_case: UseCase, mock_client: AsyncMock) -> None:
     # Arrange
     mock_client.get_cover.return_value = b"fake_cover_data"
     book_id = 123
@@ -75,7 +82,7 @@ async def test_get_cover(use_case, mock_client):
 
 
 @pytest.mark.asyncio
-async def test_get_cover_not_found(use_case, mock_client):
+async def test_get_cover_not_found(use_case: UseCase, mock_client: AsyncMock) -> None:
     # Arrange
     mock_client.get_cover.return_value = None
     book_id = 123
