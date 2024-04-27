@@ -5,6 +5,10 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Schema(BaseModel):
+    """
+    Settings schema
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     # Path to the sqlite DB

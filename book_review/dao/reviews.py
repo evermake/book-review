@@ -50,6 +50,7 @@ class Repository:
     async def delete_review(self, *, user_id: int, book_id: str) -> None:
         """
         Delete a review.
+        This method is idempotent - calling this method multiple times would not raise an error.
         """
         pass
 
@@ -73,10 +74,17 @@ class Repository:
     async def find_reviews(
         self, *, book_id: Optional[str] = None, user_id: Optional[int] = None
     ) -> Sequence[Review]:
+        """
+        Find reviews by optionally limiting the results by specific book and/or user.
+        """
         pass
 
 
 class ORMRepository(Repository):
+    """
+    Reviews respository implementation that uses sqlalchemy ORM
+    """
+
     _session: async_sessionmaker[AsyncSession]
 
     def __init__(self, session_maker: async_sessionmaker[AsyncSession]) -> None:

@@ -8,6 +8,10 @@ from book_review.models.user import User, UserID
 
 
 class UseCase:
+    """
+    User use cases such authentication, search, creating new users, etc.
+    """
+
     _hasher: PasswordHasher
     _repo: Repository
 
@@ -26,6 +30,11 @@ class UseCase:
         return list(map(lambda u: u.map(), users))
 
     async def find_user_by_id(self, id: UserID) -> Optional[User]:
+        """
+        Find a single user by its id.
+        If the the user with such id was not found None is returned.
+        """
+
         user = await self._repo.find_user_by_id(id)
 
         if user is None:
@@ -34,6 +43,11 @@ class UseCase:
         return user.map()
 
     async def find_user_by_login(self, login: str) -> Optional[User]:
+        """
+        Find a single user by its login.
+        If the the user with such login was not found None is returned.
+        """
+
         user = await self._repo.find_user_by_login(login)
 
         if user is None:
@@ -42,7 +56,11 @@ class UseCase:
         return user.map()
 
     async def create_user(self, login: str, password: str) -> UserID:
-        # TODO: make usecase own UserExistsError and map it
+        """
+        Create a new user.
+        Note, that exception will be thrown if the user exists already.
+        """
+
         return await self._repo.create_user(login, self._hash_password(password))
 
     async def authenticate_user(self, login: str, password: str) -> Optional[User]:
@@ -63,6 +81,10 @@ class UseCase:
         return user.map()
 
     def _verify_password(self, hash: str, password: str) -> bool:
+        """
+        Verify that password and hash matches
+        """
+
         try:
             return self._hasher.verify(hash, password)
         except VerifyMismatchError:
