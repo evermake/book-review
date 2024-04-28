@@ -91,7 +91,7 @@ class BookPreview(BaseModel):
 class Book(BaseModel):
     key: str
     title: str
-    description: str
+    description: Optional[str] = None
     covers: Sequence[int] = []
     subjects: Sequence[str] = []
 

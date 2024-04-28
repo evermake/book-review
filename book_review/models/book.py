@@ -26,6 +26,6 @@ class BookPreview(BaseModel):
 class Book(BaseModel):
     id: BookID
     title: str
-    description: str
+    description: Optional[str] = None
     covers: Sequence[CoverID] = []
     subjects: Sequence[str] = []
