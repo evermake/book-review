@@ -84,38 +84,17 @@ You can see the default values and their description
 
 ## Configuration Options
 
-This paragraph describes the various configuration options available for the application in detail.
+This table describes the various configuration options available for the application in detail.
 
-**Database:**
-
-- **DB (default: "db.sqlite3")** - Path to the SQLite database file used for storing book review data.
-
-**Server:**
-
-- **PORT (default: 5000)** - Port number on which the HTTP server listens for incoming requests.
-
-**Logging:**
-
-- **DEBUG (default: False)** - Enables debug mode for the application, providing more verbose logging information.
-
-**CORS:**
-
-- **CORS_ALLOWED_ORIGINS (default: ["*"])** - List of allowed origins for Cross-Origin Resource Sharing (CORS). By default, all origins are allowed ("*").
-
-**Security:**
-
-- **SECRET_KEY** - Secret key used for signing and verifying JSON Web Tokens (JWT) for authorization. This value is automatically generated on first run and should be kept confidential. It's recommended to set this value securely using an environment variable or a separate secrets file (.secrets.toml).
-- **ALGORITHM (default: "HS256")** - Algorithm used for signing and verifying JWTs.
-
-**Authentication:**
-
-- **ACCESS_TOKEN_EXPIRE_MINUTES (default: 60)** - Expiration time for JWT access tokens in minutes. After this time, the token will no longer be valid and users will need to re-authenticate.
-
-**Caching:**
-
-- **CACHE_EXPIRE_MINUTES (default: 60 * 24)** - Time before the Openlibrary client cache expires in minutes. Cached data from Openlibrary will be reused for this duration before fetching fresh information.
-
-**Openlibrary API:**
-
-- **OPENLIBRARY_BASE_URL (default: "[https://openlibrary.org/](https://openlibrary.org/)")** - Base URL for the Openlibrary API.
-- **OPENLIBRARY_COVERS_BASE_URL (default: "[https://covers.openlibrary.org/](https://covers.openlibrary.org/)")** - Base URL for fetching book cover images from Openlibrary.
+| Variable | Default value | Description
+|  --------  |  -------  | -------  |
+| DB | "db.sqlite3" | Path to the SQLite database file used for storing book review data.
+| PORT | 5000 | Port number on which the HTTP server listens for incoming requests.
+| DEBUG | False | Enables debug mode for the application, providing more verbose logging information.
+| CORS_ALLOWED_ORIGINS | ["*"] | List of allowed origins for Cross-Origin Resource Sharing (CORS).
+| SECRET_KEY | - | Secret key used for signing and verifying JSON Web Tokens (JWT) for authorization.
+| ALGORITHM | "HS256" | Algorithm used for signing and verifying JWTs.
+| ACCESS_TOKEN_EXPIRE_MINUTES | 60 | Expiration time for JWT access tokens in minutes. After this time, the token will no longer be valid and users will need to re-authenticate.
+| CACHE_EXPIRE_MINUTES | 60 * 24 | Time before the Openlibrary client cache expires in minutes. Cached data from Openlibrary will be reused for this duration before fetching fresh information.
+| OPENLIBRARY_BASE_URL | "https://openlibrary.org/" | Base URL for the Openlibrary API.
+| OPENLIBRARY_COVERS_BASE_URL | "https://covers.openlibrary.org/" | Base URL for fetching book cover images from Openlibrary.
