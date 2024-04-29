@@ -133,11 +133,14 @@ class Book(BaseModel):
         if self.authors:
             author_id = adjust_key(self.authors[0].author.key)
 
+        # for some reason api may return covers with id "-1"
+        covers = list(filter(lambda id: id > 0, self.covers))
+
         return models.Book(
             id=self.key,
             title=self.title,
             description=description,
-            covers=self.covers,
+            covers=covers,
             subjects=self.subjects,
             author_id=author_id,
         )
