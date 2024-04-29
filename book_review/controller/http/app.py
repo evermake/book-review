@@ -22,6 +22,8 @@ from book_review.usecase.users import UseCase as UsersUseCase
 
 from .coder import ORJSONCoder
 from .models import (
+    Author,
+    AuthorID,
     Book,
     BookID,
     BookPreview,
@@ -42,6 +44,7 @@ class _Tags(str, Enum):
 
     REVIEWS = "reviews"
     BOOKS = "books"
+    AUTHORS = "authors"
     USERS = "users"
     HEALTHCHECK = "healthcheck"
 
@@ -202,6 +205,20 @@ class App:
                 )
 
             return Book.parse(book)
+
+        @app.get("/authors/{id}", tags=[_Tags.AUTHORS.value])
+        @cache(expire=60 * 60 * 24)
+        async def get_author(id: AuthorID) -> Author:
+            author = await self._openlibrary.get_author(id)
+
+            if author is None:
+                # TODO: add this exception into schema
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"book with id {repr(id)} not found",
+                )
+
+            return Author.parse(author)
 
         @app.get(
             "/covers/{id}",

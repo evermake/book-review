@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Optional, Sequence
 
 import aiohttp
-from pydantic import BaseModel, PositiveInt
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt
 
 import book_review.models.book as models
 
@@ -45,6 +45,18 @@ class SearchBooksFilter(BaseModel):
     limit: Optional[PositiveInt] = None
 
 
+class Author(BaseModel):
+    name: str
+    key: str
+    bio: Optional[str] = None
+    wikipedia: Optional[AnyHttpUrl] = None
+
+    def map(self) -> models.Author:
+        return models.Author(
+            name=self.name, key=self.key, bio=self.bio, wikipedia=self.wikipedia
+        )
+
+
 class BookPreview(BaseModel):
     key: str
     title: str
@@ -57,7 +69,7 @@ class BookPreview(BaseModel):
 
     def map(self) -> models.BookPreview:
         authors = [
-            models.Author(id=key, name=name)
+            models.AuthorPreview(id=key, name=name)
             for key, name in zip(self.author_key, self.author_name)
         ]
 
@@ -188,6 +200,14 @@ class Client(ABC):
         """
         pass
 
+    @abstractmethod
+    async def get_author(self, key: str) -> Optional[Author]:
+        """
+        Get author by its key.
+        If will return None if the author was not found.
+        """
+        pass
+
 
 class HTTPAPIClient(Client):
     """
@@ -279,3 +299,17 @@ class HTTPAPIClient(Client):
 
             # TODO: stream the response instead to avoid loading entire image into RAM
             return await resp.content.read()
+
+    async def get_author(self, key: str) -> Optional[Author]:
+        async with self._api.get(f"/authors/{key}.json") as resp:
+            if resp.status == 404:
+                return None
+
+            if resp.status != 200:
+                raise Exception(f"unexpected status {resp.status}")
+
+            author = Author(**await resp.json())
+
+            author.key = adjust_key(author.key)
+
+            return author

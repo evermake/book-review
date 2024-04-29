@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional, Sequence
 
-from pydantic import BaseModel
+from pydantic import AnyHttpUrl, BaseModel
 
 import book_review.models.book as book_models
 import book_review.models.reviews as reviews_models
@@ -53,25 +53,41 @@ class Review(BaseModel):
 
 
 class Author(BaseModel):
+    name: str
+    key: str
+    bio: Optional[str] = None
+    wikipedia: Optional[AnyHttpUrl] = None
+
+    @staticmethod
+    def parse(author: book_models.Author) -> "Author":
+        return Author(
+            name=author.name,
+            key=author.key,
+            bio=author.bio,
+            wikipedia=author.wikipedia,
+        )
+
+
+class AuthorPreview(BaseModel):
     id: AuthorID
     name: str
 
     @staticmethod
-    def parse(author: book_models.Author) -> "Author":
-        return Author(id=author.id, name=author.name)
+    def parse(author: book_models.AuthorPreview) -> "AuthorPreview":
+        return AuthorPreview(id=author.id, name=author.name)
 
 
 class BookPreview(BaseModel):
     id: BookID
     title: str
-    authors: Sequence[Author] = []
+    authors: Sequence[AuthorPreview] = []
     first_publishment_date: Optional[date] = None
     subjects: Sequence[str] = []
     languages: Sequence[str] = []
 
     @staticmethod
     def parse(book: book_models.BookPreview) -> "BookPreview":
-        authors = list(map(lambda a: Author.parse(a), book.authors))
+        authors = list(map(lambda a: AuthorPreview.parse(a), book.authors))
 
         return BookPreview(
             id=book.id,
