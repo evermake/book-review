@@ -118,7 +118,7 @@ export const CoverSize = {
 export type BookPreviewFirstPublishmentDate = string | null;
 
 export interface BookPreview {
-  authors?: Author[];
+  authors?: AuthorPreview[];
   first_publishment_date?: BookPreviewFirstPublishmentDate;
   id: string;
   languages?: string[];
@@ -126,9 +126,14 @@ export interface BookPreview {
   title: string;
 }
 
+export type BookDescription = string | null;
+
+export type BookAuthorId = string | null;
+
 export interface Book {
+  author_id?: BookAuthorId;
   covers?: number[];
-  description: string;
+  description?: BookDescription;
   id: string;
   subjects?: string[];
   title: string;
@@ -149,9 +154,20 @@ export interface BodyTokenTokenPost {
   username: string;
 }
 
-export interface Author {
+export interface AuthorPreview {
   id: string;
   name: string;
+}
+
+export type AuthorWikipedia = string | null;
+
+export type AuthorBio = string | null;
+
+export interface Author {
+  bio?: AuthorBio;
+  key: string;
+  name: string;
+  wikipedia?: AuthorWikipedia;
 }
 
 
@@ -180,7 +196,7 @@ export const getHealthHealthGetQueryKey = () => {
     }
 
     
-export const getHealthHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthHealthGet>>, TError = AxiosError<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthHealthGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getHealthHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthHealthGet>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthHealthGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -205,7 +221,7 @@ export type HealthHealthGetQueryError = AxiosError<unknown>
  * @summary Health
  */
 export const useHealthHealthGet = <TData = Awaited<ReturnType<typeof healthHealthGet>>, TError = AxiosError<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthHealthGet>>, TError, TData>, axios?: AxiosRequestConfig}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthHealthGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -311,7 +327,7 @@ export const getSearchBooksBooksGetQueryKey = (params: MaybeRef<SearchBooksBooks
     }
 
     
-export const getSearchBooksBooksGetQueryOptions = <TData = Awaited<ReturnType<typeof searchBooksBooksGet>>, TError = AxiosError<HTTPValidationError>>(params: MaybeRef<SearchBooksBooksGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchBooksBooksGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getSearchBooksBooksGetQueryOptions = <TData = Awaited<ReturnType<typeof searchBooksBooksGet>>, TError = AxiosError<HTTPValidationError>>(params: MaybeRef<SearchBooksBooksGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchBooksBooksGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -336,7 +352,7 @@ export type SearchBooksBooksGetQueryError = AxiosError<HTTPValidationError>
  * @summary Search Books
  */
 export const useSearchBooksBooksGet = <TData = Awaited<ReturnType<typeof searchBooksBooksGet>>, TError = AxiosError<HTTPValidationError>>(
- params: MaybeRef<SearchBooksBooksGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchBooksBooksGet>>, TError, TData>, axios?: AxiosRequestConfig}
+ params: MaybeRef<SearchBooksBooksGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchBooksBooksGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -370,7 +386,7 @@ export const getGetBookBooksIdGetQueryKey = (id: MaybeRef<string>,) => {
     }
 
     
-export const getGetBookBooksIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getBookBooksIdGet>>, TError = AxiosError<HTTPValidationError>>(id: MaybeRef<string>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBookBooksIdGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetBookBooksIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getBookBooksIdGet>>, TError = AxiosError<HTTPValidationError>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBookBooksIdGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -395,11 +411,70 @@ export type GetBookBooksIdGetQueryError = AxiosError<HTTPValidationError>
  * @summary Get Book
  */
 export const useGetBookBooksIdGet = <TData = Awaited<ReturnType<typeof getBookBooksIdGet>>, TError = AxiosError<HTTPValidationError>>(
- id: MaybeRef<string>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBookBooksIdGet>>, TError, TData>, axios?: AxiosRequestConfig}
+ id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBookBooksIdGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
   const queryOptions = getGetBookBooksIdGetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as UseQueryReturnType<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = unref(queryOptions).queryKey as QueryKey;
+
+  return query;
+}
+
+
+
+
+/**
+ * @summary Get Author
+ */
+export const getAuthorAuthorsIdGet = (
+    id: MaybeRef<string>, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Author>> => {
+    id = unref(id);
+    return axios.default.get(
+      `/authors/${id}`,options
+    );
+  }
+
+
+export const getGetAuthorAuthorsIdGetQueryKey = (id: MaybeRef<string>,) => {
+    return ['authors',id] as const;
+    }
+
+    
+export const getGetAuthorAuthorsIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>, TError = AxiosError<HTTPValidationError>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  getGetAuthorAuthorsIdGetQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>> = ({ signal }) => getAuthorAuthorsIdGet(id, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>, TError, TData> 
+}
+
+export type GetAuthorAuthorsIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>>
+export type GetAuthorAuthorsIdGetQueryError = AxiosError<HTTPValidationError>
+
+/**
+ * @summary Get Author
+ */
+export const useGetAuthorAuthorsIdGet = <TData = Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>, TError = AxiosError<HTTPValidationError>>(
+ id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthorAuthorsIdGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+
+  ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getGetAuthorAuthorsIdGetQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as UseQueryReturnType<TData, TError> & { queryKey: QueryKey };
 
@@ -435,7 +510,7 @@ export const getGetCoverCoversIdGetQueryKey = (id: MaybeRef<number>,
 
     
 export const getGetCoverCoversIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getCoverCoversIdGet>>, TError = AxiosError<HTTPValidationError>>(id: MaybeRef<number>,
-    params?: MaybeRef<GetCoverCoversIdGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCoverCoversIdGet>>, TError, TData>, axios?: AxiosRequestConfig}
+    params?: MaybeRef<GetCoverCoversIdGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCoverCoversIdGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -461,7 +536,7 @@ export type GetCoverCoversIdGetQueryError = AxiosError<HTTPValidationError>
  */
 export const useGetCoverCoversIdGet = <TData = Awaited<ReturnType<typeof getCoverCoversIdGet>>, TError = AxiosError<HTTPValidationError>>(
  id: MaybeRef<number>,
-    params?: MaybeRef<GetCoverCoversIdGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCoverCoversIdGet>>, TError, TData>, axios?: AxiosRequestConfig}
+    params?: MaybeRef<GetCoverCoversIdGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCoverCoversIdGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -608,7 +683,7 @@ export const getFindReviewsReviewsGetQueryKey = (params?: MaybeRef<FindReviewsRe
     }
 
     
-export const getFindReviewsReviewsGetQueryOptions = <TData = Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError = AxiosError<HTTPValidationError>>(params?: MaybeRef<FindReviewsReviewsGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getFindReviewsReviewsGetQueryOptions = <TData = Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError = AxiosError<HTTPValidationError>>(params?: MaybeRef<FindReviewsReviewsGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -633,7 +708,7 @@ export type FindReviewsReviewsGetQueryError = AxiosError<HTTPValidationError>
  * @summary Find Reviews
  */
 export const useFindReviewsReviewsGet = <TData = Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError = AxiosError<HTTPValidationError>>(
- params?: MaybeRef<FindReviewsReviewsGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError, TData>, axios?: AxiosRequestConfig}
+ params?: MaybeRef<FindReviewsReviewsGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof findReviewsReviewsGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -725,7 +800,7 @@ export const getGetUsersUsersGetQueryKey = (params?: MaybeRef<GetUsersUsersGetPa
     }
 
     
-export const getGetUsersUsersGetQueryOptions = <TData = Awaited<ReturnType<typeof getUsersUsersGet>>, TError = AxiosError<HTTPValidationError>>(params?: MaybeRef<GetUsersUsersGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUsersUsersGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetUsersUsersGetQueryOptions = <TData = Awaited<ReturnType<typeof getUsersUsersGet>>, TError = AxiosError<HTTPValidationError>>(params?: MaybeRef<GetUsersUsersGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsersUsersGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -750,7 +825,7 @@ export type GetUsersUsersGetQueryError = AxiosError<HTTPValidationError>
  * @summary Get Users
  */
 export const useGetUsersUsersGet = <TData = Awaited<ReturnType<typeof getUsersUsersGet>>, TError = AxiosError<HTTPValidationError>>(
- params?: MaybeRef<GetUsersUsersGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUsersUsersGet>>, TError, TData>, axios?: AxiosRequestConfig}
+ params?: MaybeRef<GetUsersUsersGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUsersUsersGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -786,7 +861,7 @@ export const getGetSingleUserUsersSingleGetQueryKey = (params?: MaybeRef<GetSing
     }
 
     
-export const getGetSingleUserUsersSingleGetQueryOptions = <TData = Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError = AxiosError<HTTPValidationError>>(params?: MaybeRef<GetSingleUserUsersSingleGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetSingleUserUsersSingleGetQueryOptions = <TData = Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError = AxiosError<HTTPValidationError>>(params?: MaybeRef<GetSingleUserUsersSingleGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -811,7 +886,7 @@ export type GetSingleUserUsersSingleGetQueryError = AxiosError<HTTPValidationErr
  * @summary Get Single User
  */
 export const useGetSingleUserUsersSingleGet = <TData = Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError = AxiosError<HTTPValidationError>>(
- params?: MaybeRef<GetSingleUserUsersSingleGetParams>, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError, TData>, axios?: AxiosRequestConfig}
+ params?: MaybeRef<GetSingleUserUsersSingleGetParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSingleUserUsersSingleGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -845,7 +920,7 @@ export const getGetCurrentUserUsersMeGetQueryKey = () => {
     }
 
     
-export const getGetCurrentUserUsersMeGetQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError = AxiosError<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetCurrentUserUsersMeGetQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -870,7 +945,7 @@ export type GetCurrentUserUsersMeGetQueryError = AxiosError<unknown>
  * @summary Get Current User
  */
 export const useGetCurrentUserUsersMeGet = <TData = Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError = AxiosError<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError, TData>, axios?: AxiosRequestConfig}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserUsersMeGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -904,7 +979,7 @@ export const getGetCurrentUserReviewsUsersMeReviewsGetQueryKey = () => {
     }
 
     
-export const getGetCurrentUserReviewsUsersMeReviewsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError = AxiosError<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetCurrentUserReviewsUsersMeReviewsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -929,7 +1004,7 @@ export type GetCurrentUserReviewsUsersMeReviewsGetQueryError = AxiosError<unknow
  * @summary Get Current User Reviews
  */
 export const useGetCurrentUserReviewsUsersMeReviewsGet = <TData = Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError = AxiosError<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError, TData>, axios?: AxiosRequestConfig}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUserReviewsUsersMeReviewsGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ): UseQueryReturnType<TData, TError> & { queryKey: QueryKey } => {
 
@@ -941,3 +1016,7 @@ export const useGetCurrentUserReviewsUsersMeReviewsGet = <TData = Awaited<Return
 
   return query;
 }
+
+
+
+
