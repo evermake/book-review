@@ -1,0 +1,38 @@
+{
+  "name": "book-review-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "generate": "orval --config ./orval.config.cjs",
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "^5.32.0",
+    "@unocss/reset": "^0.59.4",
+    "@vueuse/core": "^10.9.0",
+    "axios": "^1.6.8",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.26",
+    "vue-router": "^4.3.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.43.1",
+    "@unocss/preset-uno": "^0.59.4",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/test-utils": "^2.4.5",
+    "eslint": "^8.57.0",
+    "eslint-plugin-playwright": "^1.6.0",
+    "eslint-plugin-vue": "^9.25.0",
+    "jsdom": "^24.0.0",
+    "orval": "^6.28.2",
+    "unocss": "^0.59.4",
+    "vite": "^5.2.10",
+    "vitest": "^1.5.2"
+  }
+}
