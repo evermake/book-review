@@ -52,3 +52,11 @@ class UseCase:
 
         # TODO: stream the image instead
         return await self._client.get_cover(id, size)
+
+    async def get_author(self, id: models.AuthorID) -> Optional[models.Author]:
+        author = await self._client.get_author(id)
+
+        if author is None:
+            return None
+
+        return author.map()
