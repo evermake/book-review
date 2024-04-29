@@ -29,3 +29,4 @@ class Book(BaseModel):
     description: Optional[str] = None
     covers: Sequence[CoverID] = []
     subjects: Sequence[str] = []
+    author_id: Optional[AuthorID] = None
