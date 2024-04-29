@@ -87,6 +87,7 @@ class Book(BaseModel):
     id: BookID
     title: str
     description: Optional[str] = None
+    author_id: Optional[AuthorID] = None
     covers: Sequence[int] = []
     subjects: Sequence[str] = []
 
@@ -98,4 +99,5 @@ class Book(BaseModel):
             description=book.description,
             covers=book.covers,
             subjects=book.subjects,
+            author_id=book.author_id,
         )

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import date
 from enum import Enum
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import aiohttp
 from pydantic import BaseModel, PositiveInt
@@ -88,20 +88,46 @@ class BookPreview(BaseModel):
         )
 
 
+class TypedField(BaseModel):
+    type: str
+    value: Any
+
+
+class BookAuthor(BaseModel):
+    class _Author(BaseModel):
+        key: str
+
+    author: _Author
+
+
 class Book(BaseModel):
     key: str
     title: str
-    description: Optional[str] = None
+    subtitle: Optional[str] = None
+    description: Optional[str | TypedField] = None
     covers: Sequence[int] = []
     subjects: Sequence[str] = []
+    authors: Sequence[BookAuthor] = []
 
     def map(self) -> models.Book:
+        description: Optional[str]
+
+        if isinstance(self.description, TypedField):
+            description = self.description.value
+        else:
+            description = self.description
+
+        author_id: Optional[models.AuthorID] = None
+        if self.authors:
+            author_id = adjust_key(self.authors[0].author.key)
+
         return models.Book(
             id=self.key,
             title=self.title,
-            description=self.description,
+            description=description,
             covers=self.covers,
             subjects=self.subjects,
+            author_id=author_id,
         )
 
 
