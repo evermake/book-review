@@ -53,7 +53,7 @@ function getCoverUrl(id) {
           <p v-else-if="reviews && reviews.data.length === 0" class="opacity-60">No reviews yet</p>
           <div v-else-if="reviews" class="flex flex-col gap-4">
             <div v-for="review in reviews.data" class="border px-4 py-6">
-              <p class="font-italic">Rating: {{ review.rating }} / 5</p>
+              <p class="font-italic">Rating: {{ (review.rating / 2).toFixed(1) }} / 5</p>
               <p class="pt-2">{{ review.commentary }}</p>
             </div>
           </div>
