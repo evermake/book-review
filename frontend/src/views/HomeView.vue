@@ -33,7 +33,11 @@ const {
           :to="{ name: 'book', params: { bookId: book.id } }"
           class="border px-4 py-2 hover:border-green"
         >
-          {{ book.title }}
+            <span>{{ book.title }}</span>
+
+            <br>
+
+            <span v-if="book.authors && book.authors.length > 0" class="opacity-60">{{ book.authors[0].name }}</span>
         </RouterLink>
       </div>
       <p v-else-if="booksError" class="text-red">{{ booksError.message }}</p>

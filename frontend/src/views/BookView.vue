@@ -33,8 +33,15 @@ const {
   isLoading: reviewsLoading,
 } = useFindReviewsReviewsGet({ book_id: bookId })
 
+const averageRating = computed(() => reviews.value?.data.reduce((acc, r) => acc + r.rating, 0) / reviews.value?.data.length)
+// const averageRating = computed(() => reviews.data)
+
 function getCoverUrl(id) {
   return `${import.meta.env.VITE_API_BASE_URL}/covers/${id}?size=L`
+}
+
+function adjustRating(rating) {
+  return (rating / 2).toFixed(1)
 }
 
 const reviewComment = ref('')
@@ -73,6 +80,12 @@ function handleReviewSubmit() {
       </div>
       <div class="col-span-2">
         <h1 class="font-semibold text-2xl mb-2">{{ book.data.title }}</h1>
+        <p class="opacity-60">
+          Rating:
+          <span v-if="reviewsLoading">Loading...</span>
+          <span v-else-if="reviews && reviews.data.length">{{ adjustRating(averageRating) }}</span>
+          <span v-else>Not rated yet</span>
+        </p>
         <p class="mb-2 opacity-60">Author:
           <span v-if="author">{{ author.data.name }}</span>
           <span v-else-if="authorLoading">Loading...</span>
@@ -105,8 +118,8 @@ function handleReviewSubmit() {
           <p v-else-if="reviews && reviews.data.length === 0" class="opacity-60">No reviews yet</p>
           <div v-else-if="reviews" class="flex flex-col gap-4">
             <div v-for="review in reviews.data" class="border p-4 relative" :key="review.user_id">
+              <p class="font-italic">Rating: {{ adjustRating(review.rating) }} / 5</p>
               <span v-if="review.user_id === me?.id" class="absolute right-6 top-4 text-sm text-green-8 opacity-80 font-bold italic">Your review</span>
-              <p class="font-italic">Rating: {{ (review.rating / 2).toFixed(1) }} / 5.0</p>
               <p class="pt-2">{{ review.commentary }}</p>
             </div>
           </div>
