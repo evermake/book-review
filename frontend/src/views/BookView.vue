@@ -1,10 +1,17 @@
 <script setup>
-import { computed } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
+import { storeToRefs } from 'pinia'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useFindReviewsReviewsGet, useGetAuthorAuthorsIdGet, useGetBookBooksIdGet } from '~/api'
+import { getGetBookBooksIdGetQueryKey, useCreateOrUpdateReviewReviewsPost, useFindReviewsReviewsGet, useGetAuthorAuthorsIdGet, useGetBookBooksIdGet } from '~/api'
+import XButton from '~/components/XButton.vue'
+import { useAuthStore } from '~/stores/auth'
 
-const bookId = useRoute().params.bookId
+const queryClient = useQueryClient()
+const route = useRoute()
+const bookId = route.params.bookId
 const {
+  refetch,
   data: book,
   isLoading: bookLoading,
   error: bookError,
@@ -16,6 +23,10 @@ const {
   data: author,
   isLoading: authorLoading,
 } = useGetAuthorAuthorsIdGet(authorId, { query: { enabled: authorEnabled } })
+
+const authStore = useAuthStore()
+const { authorized, loading: authorizedLoading, me } = storeToRefs(authStore)
+const submitReview = useCreateOrUpdateReviewReviewsPost()
 
 const {
   data: reviews,
@@ -32,13 +43,34 @@ function getCoverUrl(id) {
 function adjustRating(rating) {
   return (rating / 2).toFixed(1)
 }
+
+const reviewComment = ref('')
+const reviewRating = ref(10)
+
+function handleReviewSubmit() {
+  submitReview.mutate({
+    data: {
+      book_id: bookId,
+      commentary: reviewComment.value,
+      rating: reviewRating.value,
+    },
+  }, {
+    onSuccess: () => {
+      alert("Review added!")
+      queryClient.invalidateQueries({
+        queryKey: getGetBookBooksIdGetQueryKey(bookId),
+      })
+      refetch()
+    },
+  })
+}
 </script>
 
 <template>
   <div>
     <p v-if="bookLoading">Loading...</p>
     <div v-else-if="book" class="grid gap-8 cols-3">
-      <div class="w-full col-span-1 min-h-[400px] bg-neutral-3 rounded-lg overflow-hidden">
+      <div class="w-full col-span-1 min-h-[400px] bg-neutral-3 rounded-lg overflow-hidden self-start shadow-dark shadow-lg">
         <img
           v-if="coverId"
           class="w-full h-auto"
@@ -62,11 +94,32 @@ function adjustRating(rating) {
         <hr class="my-2">
         <section>
           <h2 class="font-medium text-lg mb-2">Reviews</h2>
+          <form
+            v-if="!authorizedLoading && authorized"
+            class="flex flex-col gap-2"
+            @submit.prevent="handleReviewSubmit"
+          > 
+            <div class="flex gap-4 ">
+              <h3 class="text-center text-md font-500">Leave your review:</h3>
+              <span>{{ (reviewRating / 2).toFixed(1) }}</span>
+              <input v-model="reviewRating" type="range" :min="2" :max="10" :step="1">
+            </div>
+            <textarea v-model="reviewComment" name="comment" rows="10" class="w-full border p-2"></textarea>
+            <XButton type="submit">Submit</XButton>
+          </form>
+          <RouterLink
+            v-else-if="!authorLoading && !authorized"
+            :to="{ name: 'login', params: { redirect: route.fullPath } }"
+          >
+            <XButton>Login to write a review</XButton>
+          </RouterLink>
+          <hr class="my-4" />
           <p v-if="reviewsLoading">Loading...</p>
           <p v-else-if="reviews && reviews.data.length === 0" class="opacity-60">No reviews yet</p>
           <div v-else-if="reviews" class="flex flex-col gap-4">
-            <div v-for="review in reviews.data" class="border px-4 py-6">
+            <div v-for="review in reviews.data" class="border p-4 relative" :key="review.user_id">
               <p class="font-italic">Rating: {{ adjustRating(review.rating) }} / 5</p>
+              <span v-if="review.user_id === me.id" class="absolute right-6 top-4 text-sm text-green-8 opacity-80 font-bold italic">Your review</span>
               <p class="pt-2">{{ review.commentary }}</p>
             </div>
           </div>
