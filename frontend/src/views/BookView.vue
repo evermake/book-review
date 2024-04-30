@@ -105,7 +105,7 @@ function handleReviewSubmit() {
           <p v-else-if="reviews && reviews.data.length === 0" class="opacity-60">No reviews yet</p>
           <div v-else-if="reviews" class="flex flex-col gap-4">
             <div v-for="review in reviews.data" class="border p-4 relative" :key="review.user_id">
-              <span v-if="review.user_id === me.id" class="absolute right-6 top-4 text-sm text-green-8 opacity-80 font-bold italic">Your review</span>
+              <span v-if="review.user_id === me?.id" class="absolute right-6 top-4 text-sm text-green-8 opacity-80 font-bold italic">Your review</span>
               <p class="font-italic">Rating: {{ (review.rating / 2).toFixed(1) }} / 5.0</p>
               <p class="pt-2">{{ review.commentary }}</p>
             </div>
