@@ -119,7 +119,7 @@ function handleReviewSubmit() {
           <div v-else-if="reviews" class="flex flex-col gap-4">
             <div v-for="review in reviews.data" class="border p-4 relative" :key="review.user_id">
               <p class="font-italic">Rating: {{ adjustRating(review.rating) }} / 5</p>
-              <span v-if="review.user_id === me.id" class="absolute right-6 top-4 text-sm text-green-8 opacity-80 font-bold italic">Your review</span>
+              <span v-if="review.user_id === me?.id" class="absolute right-6 top-4 text-sm text-green-8 opacity-80 font-bold italic">Your review</span>
               <p class="pt-2">{{ review.commentary }}</p>
             </div>
           </div>
